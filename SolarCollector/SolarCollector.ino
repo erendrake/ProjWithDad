@@ -2,33 +2,68 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-const int pumpLEDPin = PUMPLEDPIN;
-const int tempBusPin = TEMPBUSPIN;
-const int tempPollingDelay = TEMPPOLLINGDELAY;
+const int panelPumpLedPin = PANEL_PUMP_LED_PIN;
+const int panelPumpPin = PANEL_PUMP_PIN;
+const int tempBusPin = TEMP_BUS_PIN;
+const int tempPollingDelay = TEMP_POLLING_DELAY;
+const int serialBPS = SERIAL_BPS;
 
 OneWire  ds(tempBusPin);
 DallasTemperature sensors(&ds);
   
 void setup() {
-  pinMode(pumpLEDPin, OUTPUT);
-  Serial.begin(9600);
+  pinMode(panelPumpLedPin, OUTPUT);  
+  #if SERIAL
+  Serial.begin(serialBPS);
   Serial.println("Kelvinated Online Occular Tempcontrol");
-  sensors.begin();
+  #endif
+  sensors.begin();  
 }
 
 void loop() {
-  digitalWrite(pumpLEDPin, HIGH);
-  
+  digitalWrite(panelPumpLedPin, LOW);
+  requestTempSensors();
+  logTempSensors();  
+  digitalWrite(panelPumpLedPin, HIGH);  
+  delay(tempPollingDelay);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void requestTempSensors(){  
+  #if SERIAL
   Serial.print("Requesting temperatures from pin: ");
   Serial.print(tempBusPin);
-  Serial.print(" ");
+  Serial.print(" ");  
+  #endif
   
   sensors.requestTemperatures(); // Send the command to get temperatures
+  
+  #if SERIAL
   Serial.print("DONE: Found ");
   Serial.print(sensors.getDeviceCount());
-  Serial.println(" temp probes");
+  Serial.println(" temp probes");   
+  #endif
+}
+
+void logTempSensors(){
   // After we got the temperatures, we can print them here.
   // We use the function ByIndex, and as an example get the temperature from the first sensor only.
+  #if SERIAL
   for (int i = 0; i < sensors.getDeviceCount(); i++) {
     Serial.print("Temperature for the device ");
     Serial.print(i +1);
@@ -37,10 +72,6 @@ void loop() {
     Serial.print(") is: ");
     Serial.println(sensors.getTempCByIndex(i));  
   }
-  
-  
-  digitalWrite(pumpLEDPin, LOW);
-
-  
-  delay(tempPollingDelay);
+  #endif
 }
+
