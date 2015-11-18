@@ -1,6 +1,6 @@
 //Communications
-#define SERIAL 1
-#define SERIAL_BPS 230400
+//#define SERIAL_BPS 230400
+#define SERIAL_BPS 9600
 
 //Temperature Thresholds
 #define SYSTEM_DIFF_ON 18
@@ -17,6 +17,7 @@
 
 //Diagnostic LED
 #define GENERAL_ALARM_PIN 9
+#define RUNTIME_PIN 6
 
 //Temp Sensors
 #define TEMP_BUS_PIN 3
