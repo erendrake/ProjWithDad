@@ -18,33 +18,16 @@ void setup() {
   digitalWrite(runtimePin, LOW);
   Serial.begin(serialBPS);
   Serial.println("Kelvinated Online Occular Tempcontrol");
-  //sensors.begin();  
+  sensors.begin();
 }
 
 void loop() {
   digitalWrite(runtimePin, LOW);
-  //requestTempSensors();
-  //logTempSensors();  
-   delay(1000); 
+  requestTempSensors();
+  logTempSensors();  
   digitalWrite(runtimePin, HIGH);  
   delay(tempPollingDelay);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void requestTempSensors(){  
   Serial.print("Requesting temperatures from pin: ");

@@ -1,6 +1,7 @@
 //Communications
 //#define SERIAL_BPS 230400
-#define SERIAL_BPS 9600
+//#define SERIAL_BPS 115200
+#define SERIAL_BPS 19200
 
 //Temperature Thresholds
 #define SYSTEM_DIFF_ON 18
