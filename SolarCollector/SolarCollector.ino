@@ -24,7 +24,9 @@ const int tempBusPin = TEMP_BUS_PIN;
 // Sensor Settings
 const int tempResolution = TEMP_9_BIT;
 const DeviceAddress tempPanelSensorAddress = TEMP_PANEL_SENSOR_ADDRESS;
+const char* tempPanelSensorName = TEMP_PANEL_SENSOR_NAME;
 const DeviceAddress tempTankSensorAddress = TEMP_TANK_SENSOR_ADDRESS;
+const char* tempTankSensorName = TEMP_TANK_SENSOR_NAME;
 
 
 OneWire  ds(tempBusPin);
@@ -66,19 +68,24 @@ void setupTempSensors(){
   Serial.print(deviceCount);
   Serial.println(" temp probes");   
 
-  for (int i = 0; i < deviceCount; i++) {
-    DeviceAddress address;
-    if(sensors.getAddress(address, i))
-    {
-      Serial.print("Address for the device ");
-      Serial.print(i +1);
-      Serial.print(" (index ");    
-      Serial.print(i);
-      Serial.print(" ) is: ");
-      printAddress(address);        
-      Serial.println("");
-    } 
-  }
+  
+  logSensorFound(tempPanelSensorAddress, tempPanelSensorName);
+  logSensorFound(tempTankSensorAddress, tempTankSensorName);
+}
+
+void logSensorFound(const DeviceAddress addr, const char* sensorName){
+  Serial.print(sensorName);
+  Serial.print(" sensor ");
+  DeviceAddress blarg;
+  memcpy(blarg, addr, sizeof(DeviceAddress)); 
+  if(!ds.search(blarg)){
+    Serial.print("NOT ");
+  }  
+  
+  Serial.print("found at address ");
+  printAddress(blarg);
+  Serial.println("");
+  
 }
 
 void processPanelPump(){
@@ -109,6 +116,7 @@ void logTempSensors(){
   // After we got the temperatures, we can print them here.
   // We use the function ByIndex, and as an example get the temperature from the first sensor only.
   for (int i = 0; i < sensors.getDeviceCount(); i++) { 
+    
     Serial.print("Temperature for the device ");
     Serial.print(i + 1);
     Serial.print(" ( index: ");    

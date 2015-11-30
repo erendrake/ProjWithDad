@@ -22,7 +22,9 @@
 //Temp Sensors
 #define TEMP_BUS_PIN 3
 #define TEMP_POLLING_DELAY_SECONDS 10
+#define TEMP_PANEL_SENSOR_NAME "Panel Sensor"
 #define TEMP_PANEL_SENSOR_ADDRESS { 0x28, 0xB6, 0xE6, 0x1D, 0x07, 0x00, 0x00, 0x32 }
+#define TEMP_TANK_SENSOR_NAME "Tank Sensor"
 #define TEMP_TANK_SENSOR_ADDRESS { 0x28, 0xAE, 0x9F, 0x2A, 0x07, 0x00, 0x00, 0x98 }
 
 
