@@ -1,17 +1,14 @@
 //Communications
-#define SERIAL_BPS 115200
+#define MAX_ATTACHED_DS18B20 16
+#define COMPARE_TEMP 1 // Send temperature only if changed? 1 = Yes 0 = No
 
 //Temperature Thresholds
 #define SYSTEM_DIFF_ON 10
-#define SYSTEM_DIFF_OFF -5
-#define SYSTEM_OVERHEAT 160
+#define SYSTEM_DIFF_OFF 1
 
-//Panel Pump
-#define PANEL_PUMP_PIN 4
-#define MINIMUM_PUMP_ON_SECONDS 120
-
-//Heater Pump
-#define HEATER_PUMP_PIN 5
+//Attic Fan
+#define ATTIC_FAN_PIN 4
+#define INTAKE_LOUVER_PIN 5
 
 //Diagnostic LED
 #define RUNTIME_LED_PIN 6
@@ -19,7 +16,8 @@
 
 //Temp Sensors
 #define TEMP_BUS_PIN 3
-#define TEMP_POLLING_DELAY_SECONDS 3
-#define TEMP_PANEL_SENSOR_NAME "Panel Sensor"
-#define TEMP_TANK_SENSOR_NAME "Tank Sensor"
 
+//Timers
+#define LOOP_SLEEP_TIMER_SECONDS 30
+#define MINIMUM_FAN_ON_SECONDS 60
+#define FAN_DELAY 15

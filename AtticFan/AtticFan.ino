@@ -16,26 +16,24 @@
 #include <DallasTemperature.h>
 #include <OneWire.h>
 
-#define COMPARE_TEMP 1 // Send temperature only if changed? 1 = Yes 0 = No
-#define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
-#define MAX_ATTACHED_DS18B20 16
 
 // Solar addons
 //Temperature Thresholds
 const int systemDiffOn = SYSTEM_DIFF_ON;
 const int systemDiffOff = SYSTEM_DIFF_OFF;
-const int systemOverheat = SYSTEM_OVERHEAT;
 
 // Timer
-const int minimumPumpOnSeconds = MINIMUM_PUMP_ON_SECONDS;
-const int tempPollingDelay = TEMP_POLLING_DELAY_SECONDS;
+const int minimumPumpOnMs = MINIMUM_PUMP_ON_SECONDS * 1000;
+const int fanDelayMs = FAN_DELAY_SECONDS * 1000;
+const int loopSleepTimerMs = LOOP_SLEEP_TIMER_SECONDS * 1000;
 
 // LED Pins
 const int runtimePin = RUNTIME_LED_PIN;
 const int generalAlarmPin = GENERAL_ALARM_LED_PIN;
 
 // Relay Pins
-const int panelPumpPin = PANEL_PUMP_PIN;
+const int intakeLouverPin = INTAKE_LOUVER_PIN;
+const int atticFanPin = ATTIC_FAN_PIN;
 
 // Sensor Pins
 const int tempBusPin = TEMP_BUS_PIN;
@@ -44,7 +42,6 @@ const int tempBusPin = TEMP_BUS_PIN;
 const int tempResolution = TEMP_9_BIT;
 //const DeviceAddress tempPanelSensorAddress = TEMP_PANEL_SENSOR_ADDRESS;
 //const DeviceAddress tempTankSensorAddress = TEMP_TANK_SENSOR_ADDRESS;
-const char blarg = "hi buddy!";
 
 // OneWire  ds(tempBusPin);
 // DallasTemperature sensors(&ds);
@@ -53,12 +50,12 @@ const char blarg = "hi buddy!";
 float currentTankTemp = -127.0;
 float currentPanelTemp = -127.0;
 
-// Pump Status
-bool panelPumpStatus = false;
+// system Status
+bool atticFanStatus = false;
+bool intakeLouverStatus = false;
 
 // 
-unsigned long SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
-OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(tempBusPin); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature. 
 
 //
@@ -71,14 +68,14 @@ MyMessage msg(0,V_TEMP);
 
 void before()
 {
-  TRANSPORT_DEBUG(PSTR("BLARG:B\n"));
+  TRANSPORT_DEBUG(PSTR("VERBOSE:B\n"));
   // Startup up the OneWire library
   sensors.begin();
 }
 
 void setup()  
 { 
-  TRANSPORT_DEBUG(PSTR("BLARG:S\n"));
+  TRANSPORT_DEBUG(PSTR("VERBOSE:S\n"));
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
   setupPins(); 
@@ -87,7 +84,7 @@ void setup()
 
 
 void presentation() {
-  TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
+  TRANSPORT_DEBUG(PSTR("VERBOSE:P\n"));
   // Send the sketch version information to the gateway and Controller
   sendSketchInfo("Temperature Sensor", "1.1");
   // Fetch the number of attached temperature sensors  
@@ -108,7 +105,7 @@ float getTempByIndex(int index){
 
 void loop()     
 { 
-  TRANSPORT_DEBUG(PSTR("BLARG:L\n"));
+  TRANSPORT_DEBUG(PSTR("VERBOSE:L\n"));
   // Fetch temperatures from Dallas sensors
   sensors.requestTemperatures();
 
@@ -140,37 +137,51 @@ void loop()
   currentPanelTemp = logTempSensor(tempPanelSensorAddress, tempPanelSensorName);  
   currentTankTemp = logTempSensor(tempTankSensorAddress, tempTankSensorName);  
 */
- if (i==0)  currentPanelTemp = temperature;
- if (i==1)  currentTankTemp = temperature;
+ if (i==0)  currentAtticTemp = temperature;
+ if (i==1)  currentShopTemp = temperature;
   
-  processPanelPump();
+      processAtticFan();
   
-  digitalWrite(runtimePin, HIGH); // ??? 
-  delay(tempPollingDelay * 1000);     
+      digitalWrite(runtimePin, HIGH); // ??? 
     }
   }
-  wait(SLEEP_TIME);
+  wait(loopSleepTimerMs);
 }
-// All Relays and LED's are Active LOW
-void processPanelPump(){
-  float systemDifference = currentPanelTemp - currentTankTemp;
 
-  if (currentTankTemp > systemOverheat){  
-    digitalWrite(panelPumpPin, HIGH);  
+// All Relays and LED's are Active LOW
+void processAtticFan(){
+  float systemDifference = currentAtticTemp - currentShopTemp;
+
+  if (systemDifference > systemDiffOn && atticFanStatus == false && intakeLouverStatus == false){
+    digitalWrite(intakeLouverPin, LOW);  
+    intakeLouverStatus = true;
+    TRANSPORT_DEBUG(PSTR("Intake Louver: Opening!\n"));
+
+    //wait for louvers to open
+    delay(fanDelayMs);
+    TRANSPORT_DEBUG(PSTR("Intake Louver: Open!\n"));
+
+    digitalWrite(atticFanPin, LOW);  
+    atticFanStatus = true;
+    TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
     return;
   }
+  else if(systemDifference < systemDiffOff && atticFanStatus == true && intakeLouverStatus == true){
+    digitalWrite(intakeLouverPin, HIGH);  
+    intakeLouverStatus = false;
+    TRANSPORT_DEBUG(PSTR("Intake Louver: Closing!\n"));
 
-  if (systemDifference > systemDiffOn && panelPumpStatus == false){
-    digitalWrite(panelPumpPin, LOW);  
-    Serial.println("PanelPump: On!");
-    panelPumpStatus = true;
-  }
-  else if(systemDifference < systemDiffOff && panelPumpStatus == true){
-    digitalWrite(panelPumpPin, HIGH);  
-    Serial.println("PanelPump: Off!");
-    panelPumpStatus = false;
+    //wait for fan to stop 
+    delay(fanDelayMs);
+
+    digitalWrite(atticFanPin, HIGH);  
+    atticFanStatus = false;
+    TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
+    return;
   }
 }
+
+
 //
 void setupPins(){
   pinMode(panelPumpPin, OUTPUT);   
