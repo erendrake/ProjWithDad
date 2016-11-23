@@ -23,7 +23,7 @@ const int systemDiffOn = SYSTEM_DIFF_ON;
 const int systemDiffOff = SYSTEM_DIFF_OFF;
 
 // Timer
-const int minimumPumpOnMs = MINIMUM_PUMP_ON_SECONDS * 1000;
+const int minimumFanOnMs = MINIMUM_FAN_ON_SECONDS * 1000;
 const int fanDelayMs = FAN_DELAY_SECONDS * 1000;
 const int loopSleepTimerMs = LOOP_SLEEP_TIMER_SECONDS * 1000;
 
@@ -47,8 +47,8 @@ const int tempResolution = TEMP_9_BIT;
 // DallasTemperature sensors(&ds);
 
 // Current Readings
-float currentTankTemp = -127.0;
-float currentPanelTemp = -127.0;
+float currentShopTemp = -127.0;
+float currentAtticTemp = -127.0;
 
 // system Status
 bool atticFanStatus = false;
@@ -184,8 +184,12 @@ void processAtticFan(){
 
 //
 void setupPins(){
-  pinMode(panelPumpPin, OUTPUT);   
-  digitalWrite(panelPumpPin, HIGH);  
+  pinMode(atticFanPin, OUTPUT);   
+  digitalWrite(atticFanPin, HIGH);  
+
+  pinMode(intakeLouverPin, OUTPUT);   
+  digitalWrite(intakeLouverPin, HIGH);  
+
   pinMode(runtimePin, OUTPUT);  
   digitalWrite(runtimePin, HIGH);  
 }
