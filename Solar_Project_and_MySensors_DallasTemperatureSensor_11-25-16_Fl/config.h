@@ -23,7 +23,7 @@
 #define HEATER_PUMP_PIN 5
 
 // Pump Pressure Sensor
-#define Pressure_Sensor_Pin A1
+#define Pressure_Sensor_Pin A0
 
 // Pump Flow Sensor
 #define Pump_Flow_Sensor_Pin 0

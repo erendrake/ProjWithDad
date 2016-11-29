@@ -12,14 +12,26 @@
 #define MY_RADIO_NRF24
 #include "config.h"
 #include <SPI.h>
-#define MY_NODE_ID 25
+#include <LCD.h>
+#include <LiquidCrystal_I2C.h>
 #include <MySensors.h>  
 #include <DallasTemperature.h>
 #include <OneWire.h>
-
+#define MY_NODE_ID 25
 #define COMPARE_TEMP 1 // Send temperature only if changed? 1 = Yes 0 = No
 #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
 #define MAX_ATTACHED_DS18B20 16
+#define I2C_ADDR    0x27 // <<- Add your address here.
+#define Rs_pin  0
+#define Rw_pin  1
+#define En_pin  2
+#define BACKLIGHT_PIN 3
+#define D4_pin  4
+#define D5_pin  5
+#define D6_pin  6
+#define D7_pin  7
+
+LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
 
 // Solar addons
 //Temperature Thresholds
@@ -82,7 +94,17 @@ void setup()
   TRANSPORT_DEBUG(PSTR("BLARG:S\n"));
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
-  setupPins(); 
+  setupPins();
+  lcd.begin (16,2); // <<-- our LCD is a 20x4, change for your LCD if needed
+  // LCD Backlight ON
+  lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);
+  lcd.setBacklight(HIGH);
+  lcd.home (); // go home on LCD
+  
+  lcd.setCursor (0,0); // go to start of 1st line
+  lcd.print("                ");
+  lcd.setCursor (0,1); // go to start of 1st line
+  lcd.print("                ");   
 }
 
 
@@ -143,7 +165,15 @@ void loop()
 */
  if (i==1)  currentPanelTemp = temperature;
  if (i==0)  currentTankTemp = temperature;
-  
+
+  lcd.setCursor (0,0); // go to start of 1st line
+  lcd.print("Panel: ");
+  lcd.setCursor (9,0); // go to line 1 collum 10
+  lcd.print(currentPanelTemp);
+  lcd.setCursor (0,1); // go to start of 2nd line
+  lcd.print("Tank:");
+  lcd.setCursor (9,1); // go to line 2 collum 10
+  lcd.print(currentTankTemp);
   processPanelPump();
   
   digitalWrite(runtimePin, HIGH); // ??? 

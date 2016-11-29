@@ -6,6 +6,18 @@
 #define SYSTEM_DIFF_OFF 0
 #define SYSTEM_OVERHEAT 160
 
+// 2 Line LCD Display
+#define I2C_ADDR 0x27 // <<- Add your address here.
+#define Rs_pin 0
+#define Rw_pin 1
+#define En_pin 2
+#define BACKLIGHT_PIN 3
+#define D4_pin 4
+#define D5_pin 5
+#define D6_pin 6
+#define D7_pin 7
+
+
 //Panel Pump
 #define PANEL_PUMP_PIN 4
 #define MINIMUM_PUMP_ON_SECONDS 120
@@ -23,7 +35,7 @@
 #define HEATER_PUMP_PIN 5
 
 // Pump Pressure Sensor
-#define Pressure_Sensor_Pin A1
+#define Pressure_Sensor_Pin A0
 
 // Pump Flow Sensor
 #define Pump_Flow_Sensor_Pin 0
@@ -38,6 +50,11 @@
 #define TEMP_POLLING_DELAY_SECONDS 3
 #define TEMP_PANEL_SENSOR_NAME "Panel Sensor"
 #define TEMP_TANK_SENSOR_NAME "Tank Sensor"
+#define TEMP_SHOP_SENSOR_NAME "Shop Sensor"
+#define TEMP_PANEL_SENSOR_ADDRESS { 0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E }
+#define TEMP_TANK_SENSOR_ADDRESS { 0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD }
+#define TEMP_SHOP_SENSOR_ADDRESS { 0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD }
+
 //getTempByIndex(0) = 0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E);
 //getTempByIndex(1) = 0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD);
 /*

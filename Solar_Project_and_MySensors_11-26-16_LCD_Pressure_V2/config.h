@@ -36,8 +36,12 @@
 //Temp Sensors
 #define TEMP_BUS_PIN 3
 #define TEMP_POLLING_DELAY_SECONDS 3
-#define TEMP_PANEL_SENSOR_NAME "Panel Sensor"
-#define TEMP_TANK_SENSOR_NAME "Tank Sensor"
+#define TEMP_PANEL_SENSOR_NAME "Panel_Temp"
+#define TEMP_TANK_SENSOR_NAME "Tank_Temp"
+#define TEMP_SHOP_SENSOR_NAME "Shop_Temp"
+#define PUMP_PANEL_NAME "Panel_Pump"
+#define PUMP_PANEL_PRESSURE_NAME "Panel_Pump_Pressure"
+#define PUMP_PANEL_FLOW_SENSOR_NAME "Panel_Pump_Flow"
 //getTempByIndex(0) = 0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E);
 //getTempByIndex(1) = 0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD);
 /*
