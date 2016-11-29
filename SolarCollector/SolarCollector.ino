@@ -10,10 +10,7 @@
 
 // Enable and select radio type attached
   #define MY_RADIO_NRF24
-  #include "config.h"
   #include <SPI.h>
-  #include <LCD.h>
-  #include <LiquidCrystal_I2C.h>
   #include <MySensors.h>  
   #include <DallasTemperature.h>
   #include <OneWire.h>
@@ -21,6 +18,9 @@
   #define COMPARE_TEMP 1 // Send temperature only if changed? 1 = Yes 0 = No
   #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
   #define MAX_ATTACHED_DS18B20 16
+  #include "config.h"
+  #include "helper.cpp"
+  #include "output.cpp"
 
 
 
@@ -42,17 +42,6 @@
 
 // Sensor Pins
   const int tempBusPin = TEMP_BUS_PIN;
-// 2 line LCD Stuff
-#define I2C_ADDR    0x27 // <<- Add your address here.
-#define Rs_pin  0
-#define Rw_pin  1
-#define En_pin  2
-#define BACKLIGHT_PIN 3
-#define D4_pin  4
-#define D5_pin  5
-#define D6_pin  6
-#define D7_pin  7
-LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
 // Sensor Settings
 
   const char blarg = "hi buddy!";
@@ -142,8 +131,26 @@ void setup()
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
   setupPins(); 
-//  setupLCD();
+  setupLCD();
 }
+
+void setupPins(){
+  // Digital
+  pinMode(tankPumpPin, OUTPUT);   
+  digitalWrite(tankPumpPin, HIGH);  
+  pinMode(tank_Heater_pin, OUTPUT);
+  digitalWrite(tank_Heater_pin, HIGH);
+  pinMode(HVAC_Blower_Fan_and_Pump, OUTPUT);
+  digitalWrite(HVAC_Blower_Fan_and_Pump, HIGH);  
+  pinMode(attic_Fan_Pin, OUTPUT);   
+  digitalWrite(attic_Fan_Pin, HIGH);  
+  pinMode(attic_Louver_Pin, OUTPUT);   
+  digitalWrite(attic_Louver_Pin, HIGH);
+  pinMode(tank_Pump_Flow_Pin, INPUT);    
+  // Analog
+  pinMode(tank_Pump_Pressure_Pin, INPUT);  
+}
+
 //************** End of Void Setup *****************
 
 //************** Start of Presentation ********************
@@ -186,18 +193,13 @@ void presentation() {
 */
 
 // ************* End Of Presentation ********************
-/*float getTemp; {
-  float temperature = static_cast<float>(static_cast<int>(sensors.getTempFByIndex(index)) * 10.) / 10.;
-  //TRANSPORT_DEBUG(PSTR("Temp @ index: " + index + " " + temperature + "f\n"));
-  return temperature;
 }
-*/
+
 
 void loop()     
 { 
-//  TRANSPORT_DEBUG(PSTR("BLARG:L\n"));
-//
   delay(1000);
+
   Serial.println();
   Serial.print("Number of Devices found on bus = ");  
   Serial.println(sensors.getDeviceCount());   
@@ -208,22 +210,22 @@ void loop()
   sensors.requestTemperatures();
 
   Serial.print("Solar Panel Temperature is:   ");
-  printTemperature(SolarPanelTemp);
+  printTemperature(sensors, Solar_Panel_Temp);
   Serial.println();
 
   Serial.print("Storage Tank Temperature is:   ");
-  printTemperature(Tank_Temp);
+  printTemperature(sensors, Tank_Temp);
   Serial.println();
  
   Serial.print("Shop Temperature is:   ");
-  printTemperature(Shop_Temp);
+  printTemperature(sensors, Shop_Temp);
   Serial.println();
-  Attic_Temp
+  //Attic_Temp
   Serial.print("Attic Temperature is:   ");
-  printTemperature(Attic_Temp);
+  printTemperature(sensors, Attic_Temp);
   Serial.println();
    
-/*  // query conversion time and sleep until conversion completed
+  // query conversion time and sleep until conversion completed
   int16_t conversionTime = sensors.millisToWaitForConversion(sensors.getResolution());
   // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
   wait(conversionTime);
@@ -232,7 +234,7 @@ void loop()
   //for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++) {
 //  for (int 1=0;  
     // Fetch and round temperature to one decimal
-    float temperature = getTempByIndex(i);
+    /*float temperature = getTempByIndex(i);
     // Only send data if temperature has changed and no error
     #if COMPARE_TEMP == 1
     if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
@@ -253,47 +255,54 @@ void loop()
       // Send in the new temperature
       send(msg.setSensor(i).set(temperature,1));
       // Save new temperatures for next compare
-      lastTemperature[i]=temperature;
-*/
+      lastTemperature[i]=temperature;*/
 
-/*// Set Current Sensor Readings to Zero or Not Found
-  float currentTankTemp = -127.0;
-  float currentSolar_PanelTemp = -127.0;
-  float currentShop_Temp = -127.0;
-  float currentAttic_Temp = -127.0;
-  float cutternTankPumpPressure = 0.0;           // variable to store the value read  
-  float currentTankPumpFlow = 0.0;
-  */
-/*      //Solar addons
-    digitalWrite(runtimePin, LOW); // ???
- /* requestTempSensors();
-  currentPanelTemp = logTempSensor(tempPanelSensorAddress, tempPanelSensorName);  
-  currentTankTemp = logTempSensor(tempTankSensorAddress, tempTankSensorName);  
-*/
-/*
-  if (i==1)  currentPanelTemp = temperature;
-  if (i==0)  currentTankTemp = temperature;
-  if (i==2)  currentShopTemp = temperature;  
 
-// Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
-  tankPumpPressure () ; // Get Tank Pump Pressure
-  tankPumpFlow () ; // Get Tank Pump Flow
+  // Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
+  float tankPumpPressureReading = tankPumpPressure(); // Get Tank Pump Pressure
+  float tankPumpFlowReading = tankPumpFlow(); // Get Tank Pump Flow
 
-  processTankPump();
-  writeLCD();  // Send results to LCD Dispaly
-  digitalWrite(runtimePin, HIGH); // ??? 
-    }
-  }
-*/
+  //processTankPump(tankPumpPressureReading, tankPumpFlowReading);
+  //writeLCD(currentPanelTemp, currentTankTemp, currentShopTemp, tankPumpPressureReading);  // Send results to LCD Dispaly
+    //}
+  //}
+
 }
+
+// All Relays and LED's are Active LOW
+// Need to add tests for pressure and flow??????
+void processTankPump(float tankPumpPressure, float tankPumpFlow){
+ /*float systemDifference = currentPanelTemp - currentTankTemp;
+
+  if (currentTankTemp > systemOverheat){  
+    Serial.println("System Over Temp and PanelPump: Off!");
+    digitalWrite(panelPumpPin, HIGH);
+    tankPumpStatus = false;  
+    return;
+  }
+
+  if (systemDifference > systemDiffOn && panelPumpStatus == false){
+    digitalWrite(panelPumpPin, LOW);  
+    Serial.println("PanelPump: On!");
+    panelPumpStatus = true;
+  }
+  else if(systemDifference < systemDiffOff && panelPumpStatus == true){
+    digitalWrite(panelPumpPin, HIGH);  
+    Serial.println("PanelPump: Off!");
+    panelPumpStatus = false;
+  }*/
+}
+
+
+
 // ******* End of viod loop ********
 
 /*-----( Declare User-written Functions )-----*/
 
-void printTemperature(DeviceAddress deviceAddress)
+void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
 
-float tempC = sensors.getTempC(deviceAddress);
+   float tempC = sensors.getTempC(deviceAddress);
 
    if (tempC == -127.00) 
    {
@@ -309,32 +318,10 @@ float tempC = sensors.getTempC(deviceAddress);
 }// End printTemperature
 //*********( THE END )***********
 
-/*
-// All Relays and LED's are Active LOW
-// Need to add tests for pressure and flow??????
-// void processTankPump(tankPumpPressure, tankPumpFlow){
-if  
-  float systemDifference = currentPanelTemp - currentTankTemp;
-  if (currentTankTemp > systemOverheat){  
-    Serial.println("System Over Temp and PanelPump: Off!");
-    digitalWrite(panelPumpPin, HIGH);
-    tankPumpStatus = false;  
-    return;
-  }
-  if (systemDifference > systemDiffOn && panelPumpStatus == false){
-    digitalWrite(panelPumpPin, LOW);  
-    Serial.println("PanelPump: On!");
-    panelPumpStatus = true;
-  }
-  else if(systemDifference < systemDiffOff && panelPumpStatus == true){
-    digitalWrite(panelPumpPin, HIGH);  
-    Serial.println("PanelPump: Off!");
-    panelPumpStatus = false;
-  }
-}
 
 // Panel Pump Pressure Sensor Check to see if it's changed
-void tankPumpPressure(){
+float tankPumpPressure(){
+    return 1.0;
   // Put a startup timer here
 //  tankPumpFlow ();  // get tank pump flow
 // if after flow startup timer has expired and the flow is still to low do something 
@@ -346,6 +333,8 @@ void tankPumpPressure(){
   Serial.print("Pump_Pressure= ");
   Serial.print(float(pumpPressure));
   Serial.println("PSI"); //  
+
+  return pumpPressure;
   
   // If Pressure has changed send in the the new Pump Pressure
   //    send(msg.setSensor(numSensors+2).set(pumpPressure,1));
@@ -353,20 +342,69 @@ void tankPumpPressure(){
   // if pressure is <20 PSI shut pump off and set an alarm 
 }  
 
-// void tankPumpFlow(oldFlow, ) {
+float tankPumpFlow() {
+    return 1.0;
+//void tankPumpFlow(oldFlow) {
   // Put tank flow software here
    // if flow is to low even if there is pressure
    // shut pump off and set an alarm also must setup a startup timer each time we turn on the pump
   // oldTankPumpFlow = tankPumpFlow
 }
-void setupLCD(){
-  // LCD Setup
-  lcd.begin (16,2); // <<-- our LCD is a 20x4, change for your LCD if needed
-  lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);  // LCD Backlight ON
-  lcd.setBacklight(HIGH);
-  lcd.home (); // go home on LCD
+
+float logTempSensor(DallasTemperature sensors, const DeviceAddress address, const char* name){    
+    Serial.print("Temperature for the device ");
+    Serial.print(name);
+    Serial.print(" is: ");
+    float result = sensors.getTempF(address);
+    Serial.println(result);  
+    return result;
 }
-void writeLCD(){
+
+float getTempByIndex (DallasTemperature sensors, int index){
+  float temperature = static_cast<float>(static_cast<int>(sensors.getTempFByIndex(index)) * 10.) / 10.;
+  //TRANSPORT_DEBUG(PSTR("Temp @ index: " + index + " " + temperature + "f\n"));
+  return temperature;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//OUTPUT STUFFS
+#include <LCD.h>
+#include <LiquidCrystal_I2C.h>
+
+// 2 line LCD Stuff
+#define I2C_ADDR    0x27 // <<- Add your address here.
+#define Rs_pin  0
+#define Rw_pin  1
+#define En_pin  2
+#define BACKLIGHT_PIN 3
+#define D4_pin  4
+#define D5_pin  5
+#define D6_pin  6
+#define D7_pin  7
+
+LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
+
+void setupLCD(){
+// LCD Setup
+lcd.begin (16,2); // <<-- our LCD is a 20x4, change for your LCD if needed
+lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);  // LCD Backlight ON
+lcd.setBacklight(HIGH);
+lcd.home (); // go home on LCD
+}
+
+void writeLCD(float currentPanelTemp, float currentTankTemp, float currentShopTemp, float currentTankPumpPressure){
     // Convert sensor flots to int and display
   lcd.setCursor (0,0); // go to start of 1st line
   lcd.print("                ");
@@ -387,47 +425,6 @@ void writeLCD(){
   lcd.setCursor (7,1); // 
   lcd.print("PP:");
   lcd.setCursor (10,1); // 
-  lcd.print(int(pumpPressure));  
+  lcd.print(int(currentTankPumpPressure));  
 }
-
-*/
-void setupPins(){
-  // Digital
-  pinMode(tankPumpPin, OUTPUT);   
-  digitalWrite(tankPumpPin, HIGH);  
-  pinMode(tank_Heater_pin, OUTPUT);
-  digitalWrite(tank_Heater_pin, HIGH);
-  pinMode(HVAC_Blower_Fan_and_Pump, OUTPUT);
-  digitalWrite(HVAC_Blower_Fan_and_Pump, HIGH);  
-  pinMode(attic_Fan_Pin, OUTPUT);   
-  digitalWrite(attic_Fan_Pin, HIGH);  
-  pinMode(attic_Louver_Pin, OUTPUT);   
-  digitalWrite(attic_Louver_Pin, HIGH);
-  pinMode(tank_Pump_Flow_Pin, INPUT)    
-  pinMode(run_Time_Pin, OUTPUT);   
-  digitalWrite(run_Time_Pin, HIGH);  
-  pinMode(general_Alarm_Pin, OUTPUT);
-  digitalWrite(general_Alarm_Pin, HIGH);
-  // Analog
-  pinMode(tank_Pump_Pressure_Pin, INPUT);  
-}
-
-//
-float logTempSensor(const DeviceAddress address, const char* name){    
-    Serial.print("Temperature for the device ");
-    Serial.print(name);
-    Serial.print(" is: ");
-    float result = sensors.getTempF(address);
-    Serial.println(result);  
-    return result;
-}
-// function to print a device address
-/*void printAddress(DeviceAddress deviceAddress)
-{
-  {
-    if (deviceAddress[i] < 16) Serial.print("0");
-    Serial.print(deviceAddress[i], HEX);
-  }
-}*/
-
 
