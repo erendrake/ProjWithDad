@@ -34,7 +34,7 @@ const int tempPollingDelay = TEMP_POLLING_DELAY_SECONDS;
 // LED Pins
 const int runtimePin = RUNTIME_LED_PIN;
 const int generalAlarmPin = GENERAL_ALARM_LED_PIN;
-
+const int panelPumpLED = 13;
 // Relay Pins
 const int panelPumpPin = PANEL_PUMP_PIN;
 
@@ -90,7 +90,7 @@ void setup()
 void presentation() {
   TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
   // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("Solar Heater Controller", "1.1 RW/CW 11/11/16");
+  sendSketchInfo("Solar Heater Controller", "1.1 RW/CW 12/1/16");
   // Fetch the number of attached temperature sensors  
   numSensors = sensors.getDeviceCount();
   // Present all sensors to controller
@@ -158,17 +158,21 @@ void processPanelPump(){
 
   if (currentTankTemp > systemOverheat){  
     digitalWrite(panelPumpPin, HIGH);  
+    digitalWrite(panelPumpLED, HIGH);
+    panelPumpStatus = false;
     return;
   }
 
   if (systemDifference > systemDiffOn && panelPumpStatus == false){
     digitalWrite(panelPumpPin, LOW);  
     Serial.println("PanelPump: On!");
+    digitalWrite(panelPumpLED, LOW);
     panelPumpStatus = true;
   }
   else if(systemDifference < systemDiffOff && panelPumpStatus == true){
     digitalWrite(panelPumpPin, HIGH);  
     Serial.println("PanelPump: Off!");
+    digitalWrite(panelPumpLED, HIGH);
     panelPumpStatus = false;
   }
 }
@@ -177,7 +181,9 @@ void setupPins(){
   pinMode(panelPumpPin, OUTPUT);   
   digitalWrite(panelPumpPin, HIGH);  
   pinMode(runtimePin, OUTPUT);  
-  digitalWrite(runtimePin, HIGH);  
+  digitalWrite(runtimePin, HIGH);
+  pinMode(panelPumpLED, OUTPUT);
+  digitalWrite(panelPumpPin, HIGH);  
 }
 //
 float logTempSensor(const DeviceAddress address, const char* name){    

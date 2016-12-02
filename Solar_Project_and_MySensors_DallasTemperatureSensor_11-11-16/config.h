@@ -9,7 +9,7 @@
 //Panel Pump
 #define PANEL_PUMP_PIN 4
 #define MINIMUM_PUMP_ON_SECONDS 120
-
+#define PANEL_PUMP_LED 13
 // Blower Fan and Pump Pin
 #define Blower_Fan_and_Pump 6
 

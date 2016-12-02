@@ -129,6 +129,16 @@ void setup()
   attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
 
 // Start Up the LCD 
+// 2 Line LCD Display
+#define I2C_ADDR 0x27 // <<- Add your address here.
+#define Rs_pin 0
+#define Rw_pin 1
+#define En_pin 2
+#define BACKLIGHT_PIN 3
+#define D4_pin 4
+#define D5_pin 5
+#define D6_pin 6
+#define D7_pin 7
     lcd.begin (16,2); // <<-- our LCD is a 16x2
 // LCD Backlight ON
     lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);

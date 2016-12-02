@@ -179,14 +179,14 @@ void presentation() {
   present(Tank_Pump_Flow_ID, S_WATER);            // Panel Pump Flow Child ID 6
   present(Attic_Fan_ID, S_BINARY);               // Attic Fan Child ID 13
   present(Attic_Louver_ID, S_BINARY);             // Attic Louver Child ID 14
-
+}
 
 // ************* End Of Presentation ********************
-}
-  const int Solar_Panel_Temp_ID        =    0; // Panel Temp Child ID
-  const int Tank_Temp_ID               =    1; // Tank Temp Child ID
-  const int Shop_Temp_ID               =    2; // Shop Temp Child ID
-  const int Attic_Temp_ID              =    3; // Panel Pump Flow Child ID
+
+//  const int Solar_Panel_Temp_ID        =    0; // Panel Temp Child ID
+//  const int Tank_Temp_ID               =    1; // Tank Temp Child ID
+//  const int Shop_Temp_ID               =    2; // Shop Temp Child ID
+//  const int Attic_Temp_ID              =    3; // Panel Pump Flow Child ID
 
 void loop()     
 { 
@@ -223,40 +223,33 @@ void loop()
  // wait(conversionTime);
 
   // Read temperatures and send them to controller 
-  //for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++) {
+  //for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++)
 //  for (int 1=0;  
     // Fetch and round temperature to one decimal
     //float temperature = getTempByIndex(i);
     // Only send data if temperature has changed and no error
-    #if COMPARE_TEMP == 1
-    if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
-    #else
-    if (temperature != -127.00 && temperature != 85.00) {
-    #endif
-
-
   // Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
   float tankPumpPressureReading = tankPumpPressure(); // Get Tank Pump Pressure
   float tankPumpFlowReading = tankPumpFlow(); // Get Tank Pump Flow
 
 
-
+/* 
       // Send in the new Solar_Panel_Temp
       send(msg.setSensor(Solar_Panel_Temp_ID).set(Solar_Panel_Temp,1));
     #if COMPARE_TEMP == 1
-    if (currentSolarPanel_Temperature != Solar_Panel_Temp && Solar_Panel_Temp != -127.00 && Solar_Panel_Temp != 85.00) {
+    if (currentSolarPanel_Temperature != Solar_Panel_Temp && Solar_Panel_Temp != -127.00 && Solar_Panel_Temp != 85.00) 
     #else
-    if (Solar_Panel_Temp != -127.00 && Solar_Panel_Temp != 85.00) {
+    if (Solar_Panel_Temp != -127.00 && Solar_Panel_Temp != 85.00) 
     #endif
       // Save new temperatures for next compare
       currentSolarPanelTemperature=set(Solar_Panel_temp);
 
-      // Send in the new Tank_Temp
+     // Send in the new Tank_Temp
       send(msg.setSensor(Tank_Temp_ID).set(Tank_Temp,1));
     #if COMPARE_TEMP == 1
-    if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
+    if (lastTemperature[i] != Tank_Temp && Tank_Temp != -127.00 && Tank_Temp != 85.00) 
     #else
-    if (temperature != -127.00 && temperature != 85.00) {
+    if (Tank_Temp != -127.00 && Tank_Temp != 85.00) 
     #endif
       // Save new temperatures for next compare
       currentTankTemo=TankTemp;
@@ -264,9 +257,9 @@ void loop()
       // Send in the new Shop_Temp
     send(msg.setSensor(Shop_Temp_ID).set(Shop_Temp,1));
     #if COMPARE_TEMP == 1
-    if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
+    if (currentShopTemp != Shop_Temp && Shop_Temp != -127.00 && Shop_Temp != 85.00) 
     #else
-    if (temperature != -127.00 && temperature != 85.00) {
+    if (Shop_Temp != Shop_Temp && Shop_Temp != 85.00) 
     #endif
     // Save new temperatures for next compare
     currentShopTemp=ShopTemp;
@@ -274,17 +267,18 @@ void loop()
 //      // Send in the new Attic_Temp
 //      send(msg.setSensor(AtticTempID).set(Attic_Temp,1));
 //    #if COMPARE_TEMP == 1
-//    if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
+//    if (currentAttic_Temp[i] != Attic_Temp && Attic_Temp != -127.00 && Attic_Temp != 85.00) 
 //    #else
-//    if (temperature != -127.00 && temperature != 85.00) {
+//    if (Attic_Temp != -127.00 && Attic_Temp != 85.00) 
 //    #endif
 //      // Save new temperatures for next compare
 //      currentAtticTemp=AtticTemp;
-
+*/
   processTankPump(tankPumpPressureReading, tankPumpFlowReading);
   writeLCD(currentPanelTemp, currentTankTemp, currentShopTemp, tankPumpPressureReading);  // Send results to LCD Dispaly 
 
 }
+ 
 ******************** End Of Void Loop ************************
 
 // All Relays and LED's are Active LOW

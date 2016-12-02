@@ -65,6 +65,7 @@ const char blarg = "hi buddy!";
 // Current Readings
 float currentTankTemp = -127.0;
 float currentPanelTemp = -127.0;
+float currentShopTemp = -127.0;
 
 // Pump Status
 bool panelPumpStatus = false;
@@ -88,6 +89,11 @@ void before()
   // Startup up the OneWire library
   sensors.begin();
 }
+
+DeviceAddress solarPanelTempAddr ={ 0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E };
+DeviceAddress tankTempAddr = { 0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD };
+DeviceAddress shopShopAddr = { 0x28, 0x0D, 0x15, 0xE2, 0x90, 0x70, 0x00, 0x043 };
+DeviceAddress atticTempAddress = { 0x28, 0xD9, 0x5E, 0x29, 0x07, 0x00, 0x00, 0xE2 };
 
 void setup()  
 { 
