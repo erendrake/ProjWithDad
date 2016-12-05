@@ -109,8 +109,8 @@ lcd.home (); // go home on LCD
 
 //DeviceAddress Solar_Panel_Temp = {0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E};
 //DeviceAddress Tank_Temp =        {0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD};
-//DeviceAddress Shop_Temp =        {0x28, 0xD1, 0x5E, 0x29, 0x07, 0x00, 0x00, 0x43};   //
-//DeviceAddress Attic_Temp =       {0x28, 0xD9, 0x5E, 0x29, 0x07, 0x00, 0x00, 0xE2};
+//DeviceAddress Shop_Temp_Addr        = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
+//DeviceAddress Attic_Temp_Addr        = {0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49};
 // Test Addresses
 DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x80, 0xEA, 0x29, 0x07, 0x00, 0x00, 0x0A};
 DeviceAddress Tank_Temp_Addr        = {0x28, 0x03, 0xA2, 0x29, 0x07, 0x00, 0x00, 0x6E};
@@ -156,22 +156,6 @@ void setup()
   setupLCD();
 }
 
-void setupPins(){
-  // Digital
-  pinMode(tankPumpPin, OUTPUT);   
-  digitalWrite(tankPumpPin, HIGH);  
-  pinMode(tank_Heater_Pin, OUTPUT);
-  digitalWrite(tank_Heater_Pin, HIGH);
-  pinMode(HVAC_Blower_Fan_and_Pump, OUTPUT);
-  digitalWrite(HVAC_Blower_Fan_and_Pump, HIGH);  
-  pinMode(attic_Fan_Pin, OUTPUT);   
-  digitalWrite(attic_Fan_Pin, HIGH);  
-  pinMode(attic_Louver_Pin, OUTPUT);   
-  digitalWrite(attic_Louver_Pin, HIGH);
-  pinMode(tank_Pump_Flow_Pin, INPUT);    
-  // Analog
-  pinMode(tank_Pump_Pressure_Pin, INPUT);  
-}
 
 //************** End of Void Setup *****************
 
@@ -327,6 +311,22 @@ void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 //*********( THE END )***********
 
 
+void setupPins(){
+  // Digital
+  pinMode(tankPumpPin, OUTPUT);   
+  digitalWrite(tankPumpPin, HIGH);  
+  pinMode(tank_Heater_Pin, OUTPUT);
+  digitalWrite(tank_Heater_Pin, HIGH);
+  pinMode(HVAC_Blower_Fan_and_Pump, OUTPUT);
+  digitalWrite(HVAC_Blower_Fan_and_Pump, HIGH);  
+  pinMode(attic_Fan_Pin, OUTPUT);   
+  digitalWrite(attic_Fan_Pin, HIGH);  
+  pinMode(attic_Louver_Pin, OUTPUT);   
+  digitalWrite(attic_Louver_Pin, HIGH);
+  pinMode(tank_Pump_Flow_Pin, INPUT);    
+  // Analog
+  pinMode(tank_Pump_Pressure_Pin, INPUT);  
+}
 // Panel Pump Pressure Sensor Check to see if it's changed
 float tankPumpPressure(){
 //    return 1.0;
