@@ -221,7 +221,8 @@ void loop()
   sensors.requestTemperatures();
 
   Serial.print("Solar Panel Temperature is:   ");
-  printTemperature(sensors, Solar_Panel_Temp);
+
+  printTemperature(sensors, Solar_Panel_Temp_Addr);
   Serial.println();
 
   Serial.print("Storage Tank Temperature is:   ");

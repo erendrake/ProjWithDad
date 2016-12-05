@@ -16,9 +16,11 @@
 #include <MySensors.h>  
 #include <DallasTemperature.h>
 #include <OneWire.h>
+#define attic_Louvers_Open LOW
+#define attic_Louvers_Closed HIGH
+#define attic_Fan_On LOW
+#define attic_Fan_Off HIGH
 
-
-// Solar addons
 //Temperature Thresholds
 const int systemDiffOn = SYSTEM_DIFF_ON;
 const int systemDiffOff = SYSTEM_DIFF_OFF;
@@ -52,11 +54,8 @@ const int tempResolution = TEMP_9_BIT;
   const int Attic_Fan_ID               =   10; // Attic Fan on/off
   const int Attic_Louver_ID            =   11; // Attic Louver open/closed
 
-  bool attac_Fan = false;
-  bool attic_Louver = false;
-  
-// OneWire  ds(tempBusPin);
-// DallasTemperature sensors(&ds);
+// OneWire  ds(tempBusPin); ????
+// DallasTemperature sensors(&ds);  ?????
 
 // Current Readings
 float ShopTemp = -127.0;
@@ -66,13 +65,14 @@ float currentAtticTemp = -127.0;
 
 
 // system Status
-bool atticFanStatus = false;
-bool atticLouverStatus = false;
+  bool attac_Fan = false;
+  bool attic_Louver = false;
+  bool atticFanStatus = false;
+  bool atticLouverStatus = false;
 
-DeviceAddress Shop_Temp_Addr        = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
 DeviceAddress Attic_Temp_Addr       = {0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49};
-//0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95
-//0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49
+DeviceAddress Shop_Temp_Addr        = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
+
 // 
 OneWire oneWire(tempBusPin); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature. 
@@ -84,11 +84,13 @@ int numSensors=0;
 bool receivedConfig = false;
 bool metric = true;
 
+
+
 // Initialize temperature message
 //MyMessage msg(0,V_TEMP);
   MyMessage msg_attic_temp(Attic_Temp_ID ,V_TEMP);
   MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
-  MyMessage msg_attic_fan(Attic_Fan_ID ,V_STATUS);
+  MyMessage msg_attic_fan(Attic_Fan_ID ,V_LIGHT);
   MyMessage msg_attic_louver(Attic_Louver_ID, V_STATUS);
   
 void before()
@@ -107,10 +109,14 @@ void setup()
   TRANSPORT_DEBUG(PSTR("VERBOSE:S\n"));
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
-  setupPins(); 
+//  setupPins(); 
+  pinMode(attic_Fan_Pin, OUTPUT);   
+  digitalWrite(attic_Fan_Pin, HIGH);  
+  pinMode(attic_Louver_Pin, OUTPUT);   
+  digitalWrite(attic_Louver_Pin, HIGH);
+  pinMode(runtimePin, OUTPUT);  
+  digitalWrite(runtimePin, HIGH);  
 }
-
-
 
 void presentation() {
   TRANSPORT_DEBUG(PSTR("VERBOSE:P\n"));
@@ -120,17 +126,21 @@ void presentation() {
   numSensors = sensors.getDeviceCount();
   // Present all sensors to controller
   // Array for storing temps
-  for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++) {   
-     present(i, S_TEMP);
-  }
+    present(Attic_Temp_ID, S_TEMP);
+    present(Shop_Temp_ID, S_TEMP);
+    present(Attic_Fan_ID, S_LIGHT);
+    present(Attic_Louver_ID, S_BINARY);
+//  MyMessage msg_attic_temp(Attic_Temp_ID ,V_TEMP);
+//  MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
+//  MyMessage msg_attic_fan(Attic_Fan_ID ,V_LIGHT);
+//  MyMessage msg_attic_louver(Attic_Louver_ID, V_STATUS);    
 }
 
-//float getTempByIndex(int index){
+
   
 //  float temperature = static_cast<float>(static_cast<int>(sensors.getTempFByIndex(index)) * 10.) / 10.;
 //  //TRANSPORT_DEBUG(PSTR("Temp @ index: " + index + " " + temperature + "f\n"));
 //  return temperature;
-}
 
 void loop()     
 { 
@@ -157,23 +167,6 @@ void loop()
   // Fetch temperatures from Dallas sensors
   sensors.requestTemperatures();
 
-  // query conversion time and sleep until conversion completed
-//  int16_t conversionTime = sensors.millisToWaitForConversion(sensors.getResolution());
-  // sleep() call can be replaced by wait() call if node need to process incoming messages (or if node is repeater)
-  wait(conversionTime);
-
-  // Read temperatures and send them to controller 
-//  for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++) {
- 
-    // Fetch and round temperature to one decimal
-//    float temperature = getTempByIndex(i);
-    // Only send data if temperature has changed and no error
-//    #if COMPARE_TEMP == 1
-//    if (lastTemperature[i] != temperature && temperature != -127.00 && temperature != 85.00) {
-//    #else
-//    if (temperature != -127.00 && temperature != 85.00) {
-//    #endif
-
 // Get Attic Temp by Address
 //  if (currentAtticTemp != Attic_Temp && Attic_Temp != -127.00 && Attic_Temp != 85.00){
     // Save new temperatures for next compare
@@ -195,53 +188,50 @@ void loop()
       // Save new temperatures for next compare
       lastTemperature[i]=temperature;
 
-      //Solar addons
+      //
     digitalWrite(runtimePin, LOW); // ???
-
- if (i==0)  currentAtticTemp = temperature;
- if (i==1)  currentShopTemp = temperature;
-  
+//    Open Louvers and Turn On Fan If Attic is Hotter Than The Shop
       processAtticFan();
-  
-      digitalWrite(runtimePin, HIGH); // ??? 
-    }
-  }
-  wait(loopSleepTimerMs);
+        digitalWrite(runtimePin, HIGH); // ??? 
+
+
+  //wait(loopSleepTimerMs);
 }
+// ******* End of viod loop ********
 
 // All Relays and LED's are Active LOW
 void processAtticFan(){
   float systemDifference = currentAtticTemp - currentShopTemp;
 
   if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){
-    digitalWrite(attic_Louver_Pin, LOW);  
+    digitalWrite(attic_Louver_Pin, attic_Louver_Open);  
     atticLouverStatus = true;
     TRANSPORT_DEBUG(PSTR("Attic Louver: Opening!\n"));
 
     //wait for louvers to open
     delay(fanDelayMs);
     TRANSPORT_DEBUG(PSTR("Attic Louver: Open!\n"));
-
-    digitalWrite(attic_Fan_Pin, LOW);  
+    digitalWrite(attic_Fan_Pin, attic_Fan_On);  
     atticFanStatus = true;
     TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
+          send(msg.setSensor(i).set(temperature,1));
     return;
   }
   else if(systemDifference < systemDiffOff && atticFanStatus == true && atticLouverStatus == true){
-    digitalWrite(attic_Louver_Pin, HIGH);  
+    digitalWrite(attic_Louver_Pin, attic_Louver_Closed);  
     atticLouverStatus = false;
     TRANSPORT_DEBUG(PSTR("Attic Louver: Closing!\n"));
 
     //wait for fan to stop 
     delay(fanDelayMs);
 
-    digitalWrite(attic_Fan_Pin, HIGH);  
+    digitalWrite(attic_Fan_Pin, attic_Fan_On);  
     atticFanStatus = false;
     TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
     return;
   }
 }
-// ******* End of viod loop ********
+
 
 /*-----( Declare User-written Functions )-----*/
 
@@ -260,24 +250,7 @@ void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
    Serial.print(DallasTemperature::toFahrenheit(tempC));
    }
 }// End printTemperature
-//
-void setupPins(){
-//  pinMode(attic_Fan_Pin, OUTPUT);   
-//  digitalWrite(attic_Fan_Pin, HIGH);  
 
-//  pinMode(atticLouverPin, OUTPUT);   
-//  digitalWrite(atticLouverPin, HIGH);  
-  pinMode(attic_Fan_Pin, OUTPUT);   
-  digitalWrite(attic_Fan_Pin, HIGH);  
-  pinMode(attic_Louver_Pin, OUTPUT);   
-  digitalWrite(attic_Louver_Pin, HIGH);
-  pinMode(runtimePin, OUTPUT);  
-  digitalWrite(runtimePin, HIGH);  
-}
-
-
-
-//
 float logTempSensor(const DeviceAddress address, const char* name){    
     Serial.print("Temperature for the device ");
     Serial.print(name);
@@ -286,13 +259,6 @@ float logTempSensor(const DeviceAddress address, const char* name){
     Serial.println(result);  
     return result;
 }
-// function to print a device address
-/*void printAddress(DeviceAddress deviceAddress)
-{
-  {
-    if (deviceAddress[i] < 16) Serial.print("0");
-    Serial.print(deviceAddress[i], HEX);
-  }
-}*/
+
 
 
