@@ -41,10 +41,8 @@ const int attic_Fan_Pin = ATTIC_FAN_PIN;
 // Sensor Pins
 const int tempBusPin = TEMP_BUS_PIN;
 
-// Sensor Settings
+// Set Sensor Settings
 const int tempResolution = TEMP_9_BIT;
-//const DeviceAddress tempPanelSensorAddress = TEMP_PANEL_SENSOR_ADDRESS;
-//const DeviceAddress tempTankSensorAddress = TEMP_TANK_SENSOR_ADDRESS;
 
 // Define Child ID's for MySensors GW
   const int Number_Child_IDs           =    4; // Number of Child ID's
@@ -54,10 +52,7 @@ const int tempResolution = TEMP_9_BIT;
   const int Attic_Fan_ID               =   10; // Attic Fan on/off
   const int Attic_Louver_ID            =   11; // Attic Louver open/closed
 
-// OneWire  ds(tempBusPin); ????
-// DallasTemperature sensors(&ds);  ?????
-
-// Current Readings
+// Set Default Readings
 float ShopTemp = -127.0;
 float AtticTemp = -127.0;
 float currentShopTemp = -127.0;
@@ -65,19 +60,18 @@ float currentAtticTemp = -127.0;
 float tempC = -127.0;
 
 // system Status
-  bool attac_Fan = false;
-  bool attic_Louver = false;
+  bool attac_Fan = false;   // ??????
+  bool attic_Louver = false;// ??????
   bool atticFanStatus = false;
   bool atticLouverStatus = false;
 
+// Hex Addresses of Dallas Temp Sensors
 DeviceAddress Shop_Temp_Addr         = {0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49};
 DeviceAddress Attic_Temp_Addr        = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
 
-// 
+// OneWire and Dallas Themp Setup
 OneWire oneWire(tempBusPin); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature. 
-
-//
 float lastTemperature[MAX_ATTACHED_DS18B20];
 int numSensors=0;
 bool receivedConfig = false;
@@ -97,7 +91,6 @@ void before()
   sensors.setResolution(Shop_Temp_Addr, tempResolution);
   sensors.setResolution(Attic_Temp_Addr, tempResolution);
   sensors.begin();
-
 }
 
 void setup()  
@@ -117,7 +110,7 @@ void setup()
 void presentation() {
   TRANSPORT_DEBUG(PSTR("VERBOSE:P\n"));
   // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("Attic Fan/Louver Controller:","1.1");
+  sendSketchInfo("Attic Fan/Louver Controller:","V3");
   // Fetch the number of attached temperature sensors  
   numSensors = sensors.getDeviceCount();
   // Present all sensors to controller
@@ -137,7 +130,7 @@ void loop()
 // Wait for sensors to resolve
   wait(1000);
 // Print results
- Serial.println();
+  Serial.println();
   Serial.print("Number of Devices found on bus = ");  
   Serial.println(sensors.getDeviceCount());   
   Serial.print("Getting temperatures... ");  
@@ -146,12 +139,8 @@ void loop()
 // ************ Get Attic Temp by Address *****************
     Serial.print("Attic Temperature is:   ");
     printTemperature(sensors, Attic_Temp_Addr);
-//    Serial.println();
-   float AtticTemp = sensors.getTempC(Attic_Temp_Addr);
-//   Serial.print("C: ");
-//   Serial.print(AtticTemp);
-//   Serial.print(" F: ");
-//   Serial.println(DallasTemperature::toFahrenheit(AtticTemp));
+    Serial.println();
+    float AtticTemp = sensors.getTempC(Attic_Temp_Addr);
     currentAtticTemp=AtticTemp;
     // Send GW the new Attic_Temp
     Serial.println(); 
@@ -163,10 +152,6 @@ void loop()
     printTemperature(sensors, Shop_Temp_Addr);
     Serial.println();
    float ShopTemp = sensors.getTempC(Shop_Temp_Addr);
-//   Serial.print("C: ");
-//   Serial.print(ShopTemp);
-//   Serial.print(" F: ");
-//   Serial.println(DallasTemperature::toFahrenheit(ShopTemp));
     currentShopTemp=ShopTemp;
     // Send GW the new Shop_Temp
     Serial.println(); 
@@ -199,24 +184,16 @@ void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
    Serial.print(DallasTemperature::toFahrenheit(tempC));
    return(tempC);
    }
-}// End printTemperature
+}// ***** End printTemperature ********
 
 //*********** Stat of processAtticFan *************
-
 // All Relays and LED's are Active LOW
-// ********** Start processAtticFan ************
+
 void processAtticFan(){
   Serial.println("We made it to the processAtticFan");
   float AtticTemp = sensors.getTempC(Attic_Temp_Addr);
   float ShopTemp = sensors.getTempC(Shop_Temp_Addr);  
   float systemDifference = AtticTemp - ShopTemp;
-//  Serial.println("tempC", int(tempC));
-//  Serial.print("AtticTemp= ");
-//  Serial.println(int(AtticTemp));
-//  Serial.print("ShopTemp= ");
-//  Serial.println(int(ShopTemp));  
-//  Serial.print("systemDiff= ");
-//  Serial.println(int(systemDifference));
   if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){
     digitalWrite(attic_Louver_Pin, attic_Louver_Open);  
     atticLouverStatus = true;
@@ -224,10 +201,12 @@ void processAtticFan(){
     //wait for Louver to open
     delay(fanDelayMs);
     TRANSPORT_DEBUG(PSTR("Attic Louver: Open!\n"));
+//  Send GW New Status
     send(msg_attic_louver.setSensor(Attic_Louver_ID).set(1));
     digitalWrite(attic_Fan_Pin, attic_Fan_On);  
     atticFanStatus = true;
     TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
+//  Send GW New Status
     send(msg_attic_fan.setSensor(Attic_Fan_ID).set(1));
     return;
   }
@@ -235,6 +214,7 @@ void processAtticFan(){
     digitalWrite(attic_Louver_Pin, attic_Louver_Closed);  
     atticLouverStatus = false;
     TRANSPORT_DEBUG(PSTR("Attic Louver: Closing!\n"));
+//  Send GW New Status
     send(msg_attic_louver.setSensor(Attic_Louver_ID).set(0));
     //wait for fan to stop 
     delay(fanDelayMs);
@@ -242,6 +222,7 @@ void processAtticFan(){
     digitalWrite(attic_Fan_Pin, attic_Fan_Off);  
     atticFanStatus = false;
     TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
+//  Send GW New Status
     send(msg_attic_fan.setSensor(Attic_Fan_ID).set(0));
     return;
   }

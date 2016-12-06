@@ -107,7 +107,13 @@ void setup()
   TRANSPORT_DEBUG(PSTR("VERBOSE:S\n"));
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
-  setupPins(); 
+//  setupPins(); 
+  pinMode(attic_Fan_Pin, OUTPUT);   
+  digitalWrite(attic_Fan_Pin, HIGH);  
+  pinMode(attic_Louver_Pin, OUTPUT);   
+  digitalWrite(attic_Louver_Pin, HIGH);
+  pinMode(runtimePin, OUTPUT);  
+  digitalWrite(runtimePin, HIGH); 
 }
 
 
@@ -130,7 +136,7 @@ void presentation() {
 //  float temperature = static_cast<float>(static_cast<int>(sensors.getTempFByIndex(index)) * 10.) / 10.;
 //  //TRANSPORT_DEBUG(PSTR("Temp @ index: " + index + " " + temperature + "f\n"));
 //  return temperature;
-}
+
 
 void loop()     
 { 
