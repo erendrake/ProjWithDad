@@ -57,7 +57,7 @@ float ShopTemp = -127.0;
 float AtticTemp = -127.0;
 float currentShopTemp = -127.0;
 float currentAtticTemp = -127.0;
-float tempC = -127.0;
+
 
 // system Status
   bool attac_Fan = false;   // ??????
@@ -135,12 +135,11 @@ void loop()
   Serial.println(sensors.getDeviceCount());   
   Serial.print("Getting temperatures... ");  
   Serial.println();   
-
+// 
 // ************ Get Attic Temp by Address *****************
     Serial.print("Attic Temperature is:   ");
-    printTemperature(sensors, Attic_Temp_Addr);
+    AtticTemp = printTemperature(sensors, Attic_Temp_Addr);
     Serial.println();
-    float AtticTemp = sensors.getTempC(Attic_Temp_Addr);
     currentAtticTemp=AtticTemp;
     // Send GW the new Attic_Temp
     Serial.println(); 
@@ -149,9 +148,8 @@ void loop()
     
 // ************ Get Shop Temp by Address *******************
     Serial.print("Shop Temperature is:   ");
-    printTemperature(sensors, Shop_Temp_Addr);
+    ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
     Serial.println();
-   float ShopTemp = sensors.getTempC(Shop_Temp_Addr);
     currentShopTemp=ShopTemp;
     // Send GW the new Shop_Temp
     Serial.println(); 
@@ -169,7 +167,7 @@ void loop()
 // ******* End of viod loop ********
 
 //******** Start of printTemperature ***********
-void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
+float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
    float tempC = sensors.getTempC(deviceAddress);
    if (tempC == -127.00) 
@@ -191,8 +189,6 @@ void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 
 void processAtticFan(){
   Serial.println("We made it to the processAtticFan");
-  float AtticTemp = sensors.getTempC(Attic_Temp_Addr);
-  float ShopTemp = sensors.getTempC(Shop_Temp_Addr);  
   float systemDifference = AtticTemp - ShopTemp;
   if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){
     digitalWrite(attic_Louver_Pin, attic_Louver_Open);  

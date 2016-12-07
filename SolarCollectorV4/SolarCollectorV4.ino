@@ -255,7 +255,7 @@ void loop()
     currentAtticTemp=AtticTemp;
     // Send GW the new Attic_Temp
     send(msg.setSensor(Attic_Temp_ID).set(Attic_Temp,1));
-//    } 
+    } 
 
 float processTankPump(tankPumpPressureReading, tankPumpFlowReading);
 writeLCD(currentPanelTemp, currentTankTemp, currentShopTemp, tankPumpPressureReading);  // Send results to LCD Dispaly 
@@ -295,7 +295,7 @@ float systemDifference = currentPanelTemp - currentTankTemp;
 
 void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
-   float tempC = sensors.getTempC(deviceAddress);
+   tempC = sensors.getTempC(deviceAddress);
    if (tempC == -127.00) 
    {
    Serial.print("Error getting temperature  ");
@@ -307,7 +307,8 @@ void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
    Serial.print(" F: ");
    Serial.print(DallasTemperature::toFahrenheit(tempC));
    }
-}// End printTemperature
+}
+// End printTemperature
 //*********( THE END )***********
 
 
