@@ -164,7 +164,7 @@ void loop()
 //  Serial.print("Just about to call processAtticFan systemDiff= ");
 //  Serial.println(int(systemDifference));
    processAtticFan();
-} **** End of Fan and Louver Control ****
+}// **** End of Fan and Louver Control ****
 
 // ******* End of viod loop ********
 
