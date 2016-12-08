@@ -49,8 +49,8 @@ const int tempResolution = TEMP_9_BIT;
   const int Number_Temp_Sensors        =    2; // Number of Temp Sensors
   const int Shop_Temp_ID               =    0; // Shop Temp Child ID
   const int Attic_Temp_ID              =    1; // Attic Temp Child ID
-  const int Attic_Fan_ID               =   10; // Attic Fan on/off
-  const int Attic_Louver_ID            =   11; // Attic Louver open/closed
+  const int Attic_Fan_ID               =   13; // Attic Fan on/off
+  const int Attic_Louver_ID            =   14; // Attic Louver open/closed
 
 // Set Default Readings
 float ShopTemp = -127.0;

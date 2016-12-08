@@ -21,8 +21,11 @@
   #include "config.h"
   #include <LCD.h>
   #include <LiquidCrystal_I2C.h>
-
-
+  #define attic_Louver_Open = LOW;
+  #define attic_Louver_Closed = HIGH;
+  #define attic_Fan_On = LOW;
+  #define attic_Fan_Off = HIGH;
+  
 // Solar addons
 //Temperature Thresholds
   const int systemDiffOn = SYSTEM_DIFF_ON;
@@ -31,7 +34,8 @@
   
 // Timer
   const int minimumPumpOnSeconds = MINIMUM_PUMP_ON_SECONDS;
-  const int tempPollingDelay = TEMP_POLLING_DELAY_SECONDS;
+//  const int tempPollingDelay = TEMP_POLLING_DELAY_msSECONDS;
+  const int fanDelayMs = FAN_DELAY_SECONDS * 1000;
 
 // LED Pins
 
@@ -47,13 +51,6 @@
 #define D7_pin  7
 LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
 
-void setupLCD(){
-// LCD Setup
-lcd.begin (16,2); // <<-- our LCD is a 20x4, change for your LCD if needed
-lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);  // LCD Backlight ON
-lcd.setBacklight(HIGH);
-lcd.home (); // go home on LCD
-}
 // Relay Pins
   const int tankPumpPin = TANK_PUMP_PIN;
 
@@ -78,8 +75,12 @@ lcd.home (); // go home on LCD
   const int Tank_Heater_ID             =   15; // Storage Tank Heater on/off
 
 // Set Current Sensor Readings to Zero or Not Found
+  float solarPanelTemp = -127.0;
+  float tankTemp = -127.0;
+  float shopTemp = -127.0;
+  float atticTemp = -127.0;
+  float currentSolarPanelTemp = -127.0;
   float currentTankTemp = -127.0;
-  float currentPanelTemp = -127.0;
   float currentShopTemp = -127.0;
   float currentAtticTemp = -127.0;
   float cutternTankPumpPressure = 0.0;           // variable to store the value read  
@@ -97,7 +98,9 @@ lcd.home (); // go home on LCD
   bool tank_Heater = false;
   bool attac_Fan = false;
   bool attic_Louver = false;
-
+// system Status
+  bool atticFanStatus = false;
+  bool atticLouverStatus = false;
   
 // Start OneWire and Dallas Temp 
   OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -109,8 +112,8 @@ lcd.home (); // go home on LCD
 
 //DeviceAddress Solar_Panel_Temp = {0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E};
 //DeviceAddress Tank_Temp =        {0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD};
-//DeviceAddress Shop_Temp =        {0x28, 0xD1, 0x5E, 0x29, 0x07, 0x00, 0x00, 0x43};   //
-//DeviceAddress Attic_Temp =       {0x28, 0xD9, 0x5E, 0x29, 0x07, 0x00, 0x00, 0xE2};
+//DeviceAddress Shop_Temp_Addr        = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
+//DeviceAddress Attic_Temp_Addr        = {0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49};
 // Test Addresses
 DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x80, 0xEA, 0x29, 0x07, 0x00, 0x00, 0x0A};
 DeviceAddress Tank_Temp_Addr        = {0x28, 0x03, 0xA2, 0x29, 0x07, 0x00, 0x00, 0x6E};
@@ -118,6 +121,7 @@ DeviceAddress Shop_Temp_Addr        = {0x28, 0x37, 0x49, 0x29, 0x07, 0x00, 0x00,
 DeviceAddress Attic_Temp_Addr        = {0x28, 0xD1, 0x5E, 0x29, 0x07, 0x00, 0x00, 0x43};
 
 // Initialize sensor message to MySensors Gateway
+
   MyMessage msg_solar_panel_temp(Solar_Panel_Temp_ID, V_TEMP);
   MyMessage msg_tank_temp(Tank_Temp_ID, V_TEMP);
   MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
@@ -129,7 +133,7 @@ DeviceAddress Attic_Temp_Addr        = {0x28, 0xD1, 0x5E, 0x29, 0x07, 0x00, 0x00
   MyMessage msg_attic_louver(Attic_Louver_ID, V_STATUS);
 
 
-//************** Start of void before *****************
+// **** Start of void before ****
 void before() // ??????
 {
 //  TRANSPORT_DEBUG(PSTR("BLARG:B\n"));
@@ -143,50 +147,31 @@ void before() // ??????
   sensors.setResolution(Shop_Temp_Addr, tempResolution);
   sensors.setResolution(Attic_Temp_Addr, tempResolution);
 }
-//************** End of void before *****************
+// **** End of void before ****
 
-//************** Start of Void Setup *****************
+// **** Start of Void Setup ****
 void setup()  
 { 
 //  TRANSPORT_DEBUG(PSTR("BLARG:S\n"));
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
-  setupPins(); 
-  setupLCD();
+//  setupPins(); 
+//  setupLCD();
 }
+// **** End of Void Setup ****
 
-void setupPins(){
-  // Digital
-  pinMode(tankPumpPin, OUTPUT);   
-  digitalWrite(tankPumpPin, HIGH);  
-  pinMode(tank_Heater_Pin, OUTPUT);
-  digitalWrite(tank_Heater_Pin, HIGH);
-  pinMode(HVAC_Blower_Fan_and_Pump, OUTPUT);
-  digitalWrite(HVAC_Blower_Fan_and_Pump, HIGH);  
-  pinMode(attic_Fan_Pin, OUTPUT);   
-  digitalWrite(attic_Fan_Pin, HIGH);  
-  pinMode(attic_Louver_Pin, OUTPUT);   
-  digitalWrite(attic_Louver_Pin, HIGH);
-  pinMode(tank_Pump_Flow_Pin, INPUT);    
-  // Analog
-  pinMode(tank_Pump_Pressure_Pin, INPUT);  
-}
-
-//************** End of Void Setup *****************
-
-//************** Start of Presentation ********************
+// **** Start of Presentation ****
 void presentation() {
-//  TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
+  TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
 
 // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("Solar Heater Controller", "1.1 RW/CW 11/11/16");
+  sendSketchInfo("Solar Heater Controller", "V5 RW/CW 12/7/16");
 
 // Fetch the number of attached temperature sensors  
   numSensors = Number_Temp_Sensors;
 
-// Present all sensors to controller
-// Array for storing temps
-
+// **** Start Of Presentation ****
+// Present All Sensors to GateWay
   present(Solar_Panel_Temp_ID, S_TEMP);          // Panel Temp Child ID 0
   present(Tank_Temp_ID, S_TEMP);                 // Tank Temp Child ID 1
   present(Shop_Temp_ID, S_TEMP);                 // Shop Temp Child ID 2
@@ -198,14 +183,9 @@ void presentation() {
   present(Attic_Fan_ID, S_BINARY);               // Attic Fan Child ID 13
   present(Attic_Louver_ID, S_BINARY);            // Attic Louver Child ID 14
 }
+// **** End Of Presentation ****
 
-// ************* End Of Presentation ********************
-
-//  const int Solar_Panel_Temp_ID        =    0; // Panel Temp Child ID
-//  const int Tank_Temp_ID               =    1; // Tank Temp Child ID
-//  const int Shop_Temp_ID               =    2; // Shop Temp Child ID
-//  const int Attic_Temp_ID              =    3; // Panel Pump Flow Child ID
-
+// ************* Start of void loop ********************
 void loop()     
 { 
   wait(1000);
@@ -215,64 +195,95 @@ void loop()
   Serial.println(sensors.getDeviceCount());   
   Serial.print("Getting temperatures... ");  
   Serial.println();   
-    
-
-
-  // Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
-  tankPumpPressureReading = tankPumpPressure(); // Get Tank Pump Pressure
-  tankPumpFlowReading = tankPumpFlow();         // Get Tank Pump Flow
-
-// ************ Get Solar Panel Temp by Address *****************
-    Serial.print("Solar Panel Temperature is:   ");
-    AtticTemp = printTemperature(sensors, Solar_Panel_Temp_Addr);
-    Serial.println();
-    currentAtticTemp=AtticTemp;
-    // Send GW the new Attic_Temp
-    Serial.println(); 
-    send(msg_attic_temp.setSensor(Attic_Temp_ID).set(AtticTemp,1));
-// ********** End if get Attic Temp by Address ************ 
-    
-// ************ Get Tank Temp by Address *******************
-    Serial.print("Tank Temperature is:   ");
-    ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
-    Serial.println();
-    currentShopTemp=ShopTemp;
-    // Send GW the new Shop_Temp
-    Serial.println(); 
-    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
-// ************ End of Get Shop Temp by Address ************    
-
-// ************ Get Attic Temp by Address *****************
-    Serial.print("Attic Temperature is:   ");
-    AtticTemp = printTemperature(sensors, Attic_Temp_Addr);
-    Serial.println();
-    currentAtticTemp=AtticTemp;
-    // Send GW the new Attic_Temp
-    Serial.println(); 
-    send(msg_attic_temp.setSensor(Attic_Temp_ID).set(AtticTemp,1));
-// ********** End if get Attic Temp by Address ************ 
-
-// ************ Get Shop Temp by Address *******************
-    Serial.print("Shop Temperature is:   ");
-    ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
-    Serial.println();
-    currentShopTemp=ShopTemp;
-    // Send GW the new Shop_Temp
-    Serial.println(); 
-    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
-// ************ End of Get Shop Temp by Address ************
-
-float processTankPump(tankPumpPressureReading, tankPumpFlowReading);
-writeLCD(currentPanelTemp, currentTankTemp, currentShopTemp, tankPumpPressureReading);  // Send results to LCD Dispaly 
-
-}
  
+  // Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
+//  currentTankPumpPressure = tankPumpPressure();     // Get Tank Pump Pressure
+//  currentTankPumpFlow = tankPumpFlow();         // Get Tank Pump Flow
+
+// **** Get Solar Panel Temp by Address ****
+    Serial.print("Solar Panel Temperature is:   ");
+    solarPanelTemp = printTemperature(sensors, Solar_Panel_Temp_Addr);
+    Serial.println();
+    currentSolarPanelTemp=solarPanelTemp;
+    // Send GW the new solarPanelTemp
+    Serial.println(); 
+    send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(solarPanelTemp,1));
+// **** End if get Attic Temp by Address **** 
+    
+// **** Get Tank Temp by Address ****
+    Serial.print("Tank Temperature is:   ");
+    tankTemp = printTemperature(sensors, Tank_Temp_Addr);
+    Serial.println();
+    currentTankTemp=tankTemp;
+    // Send GW the new tankTemp
+    Serial.println(); 
+    send(msg_tank_temp.setSensor(Tank_Temp_ID).set(tankTemp,1));
+// **** End of Get Shop Temp by Address ****    
+
+// **** Get Attic Temp by Address ****
+    Serial.print("Attic Temperature is:   ");
+    atticTemp = printTemperature(sensors, Attic_Temp_Addr);
+    Serial.println();
+    currentAtticTemp=atticTemp;
+    // Send GW the new Attic_Temp
+    Serial.println(); 
+    send(msg_attic_temp.setSensor(Attic_Temp_ID).set(atticTemp,1));
+// **** End if get Attic Temp by Address **** 
+
+// **** Get Shop Temp by Address ****
+    Serial.print("Shop Temperature is:   ");
+    shopTemp = printTemperature(sensors, Shop_Temp_Addr);
+    Serial.println();
+    currentShopTemp=shopTemp;
+    // Send GW the new shopTemp
+    Serial.println(); 
+    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(shopTemp,1));
+// **** End of Get Shop Temp by Address ****
+
+// **** Turn On Tank Pump If It's Sunny Enough ****
+//  float processTankPump(currentTankPumpPressure, currentTankPumpFlow);
+    float processTankPump();
+// **** End of Pump Control for This Round
+
+// **** Write Solar Panel Temp , Storage Tank Temp, Shop Temp, and Pump Pressure to LCD ****
+//    writeLCD(currentSolarPanelTemp, currentTankTemp, currentShopTemp, tankPumpPressureReading);  // Send results to LCD Dispaly 
+// ****
+
+// **** Open Louver and Turn On Fan If Attic is Hotter Than The Shop ****
+  float processAtticFan();
+// **** End of Fan and Louver Control ****
+}
 //******************** End Of Void Loop ************************
 
+// **** Declare User-written Functions ****
+
+// **** Start of printTemperature ****
+float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
+{
+   float tempC = sensors.getTempC(deviceAddress);
+   if (tempC == -127.00) 
+   {
+   Serial.print("Error getting temperature  ");
+   } 
+   else
+   {
+   Serial.print("C: ");
+   Serial.print(tempC);
+   Serial.print(" F: ");
+   Serial.print(DallasTemperature::toFahrenheit(tempC));
+   return(tempC);
+   }
+}
+// **** End of printTemperature ****
+
+
+// **** Start of processTankPump ****
 // All Relays and LED's are Active LOW
+
 // Need to add tests for pressure and flow??????
-float processTankPump(float tankPumpPressure, float tankPumpFlow){
-   systemDifference = currentPanelTemp - currentTankTemp;
+void processTankPump(){
+  Serial.println("We made it to the processTankPump");   
+  float systemDifference = solarPanelTemp - tankTemp;
 
   if (currentTankTemp > systemOverheat){  
     Serial.println("System Over Temp and TankPump: Off!");
@@ -291,29 +302,68 @@ float processTankPump(float tankPumpPressure, float tankPumpFlow){
     tankPump = false;
   }
 }
+// **** End of processTankPump ****
 
-// ******* End of viod loop ********
+//**** Stat of processAtticFan ****
+// All Relays and LED's are Active LOW
+void processAtticFan(){
+  Serial.println("We made it to the processAtticFan");
+  float systemDifference = atticTemp - shopTemp;
+  if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){
+    digitalWrite(attic_Louver_Pin, LOW);  
+    atticLouverStatus = true;
+    TRANSPORT_DEBUG(PSTR("Attic Louver: Opening!\n"));
+    //wait for Louver to open
+    delay(fanDelayMs);
+    TRANSPORT_DEBUG(PSTR("Attic Louver: Open!\n"));
+//  Send GW New Status
+    send(msg_attic_louver.setSensor(Attic_Louver_ID).set(1));
+    digitalWrite(attic_Fan_Pin, LOW);  
+    atticFanStatus = true;
+    TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
+//  Send GW New Status
+    send(msg_attic_fan.setSensor(Attic_Fan_ID).set(1));
+    return;
+  }
+  else if(systemDifference < systemDiffOff && atticFanStatus == true && atticLouverStatus == true){
+    digitalWrite(attic_Louver_Pin, HIGH);  
+    atticLouverStatus = false;
+    TRANSPORT_DEBUG(PSTR("Attic Louver: Closing!\n"));
+//  Send GW New Status
+    send(msg_attic_louver.setSensor(Attic_Louver_ID).set(0));
+    //wait for fan to stop 
+    delay(fanDelayMs);
 
-/*-----( Declare User-written Functions )-----*/
+    digitalWrite(attic_Fan_Pin, HIGH);  
+    atticFanStatus = false;
+    TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
+//  Send GW New Status
+    send(msg_attic_fan.setSensor(Attic_Fan_ID).set(0));
+    return;
+  }
+}
+// **** End processAtticFan ****
 
-void printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
-{
-   float tempC = sensors.getTempC(deviceAddress);
-   if (tempC == -127.00) 
-   {
-   Serial.print("Error getting temperature  ");
-   } 
-   else
-   {
-   Serial.print("C: ");
-   Serial.print(tempC);
-   Serial.print(" F: ");
-   Serial.print(DallasTemperature::toFahrenheit(tempC));
-   }
-}// End printTemperature
-//*********( THE END )***********
+// **** Start of setupPins ****
+void setupPins(){
+  // Digital
+  pinMode(tankPumpPin, OUTPUT);   
+  digitalWrite(tankPumpPin, HIGH);  
+  pinMode(tank_Heater_Pin, OUTPUT);
+  digitalWrite(tank_Heater_Pin, HIGH);
+  pinMode(HVAC_Blower_Fan_and_Pump, OUTPUT);
+  digitalWrite(HVAC_Blower_Fan_and_Pump, HIGH);  
+  pinMode(attic_Fan_Pin, OUTPUT);   
+  digitalWrite(attic_Fan_Pin, HIGH);  
+  pinMode(attic_Louver_Pin, OUTPUT);   
+  digitalWrite(attic_Louver_Pin, HIGH);
+  pinMode(tank_Pump_Flow_Pin, INPUT);    
+  // Analog
+  pinMode(tank_Pump_Pressure_Pin, INPUT);  
+}
+// **** End of setupPins ****
 
-
+// **** Start of tankPumpPressure ****
 // Panel Pump Pressure Sensor Check to see if it's changed
 float tankPumpPressure(){
 //    return 1.0;
@@ -336,7 +386,9 @@ float tankPumpPressure(){
   
   // if pressure is <20 PSI shut pump off and set an alarm 
 }  
+// **** End of tankPumpPressure ****
 
+// **** Start of tankPumpFlow ****
 float tankPumpFlow() {
     return 1.0;
 //void tankPumpFlow(oldFlow) {
@@ -345,12 +397,17 @@ float tankPumpFlow() {
    // shut pump off and set an alarm also must setup a startup timer each time we turn on the pump
   // oldTankPumpFlow = tankPumpFlow
 }
+// **** End of tankPumpFlow ****
 
-//  float getTempByIndex (DallasTemperature sensors, int index){
-//  float temperature = static_cast<float>(static_cast<int>(sensors.getTempFByIndex(index)) * 10.) / 10.;
-//  TRANSPORT_DEBUG(PSTR("Temp @ index: " + index + " " + temperature + "f\n"));
-//  return temperature;
-//  }
+// **** Start of LCD Output ****
+void setupLCD(){
+// LCD Setup
+lcd.begin (16,2); // <<-- our LCD is a 20x4, change for your LCD if needed
+lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);  // LCD Backlight ON
+lcd.setBacklight(HIGH);
+lcd.home (); // go home on LCD
+}
+
 //OUTPUT STUFFS
 void writeLCD(float currentPanelTemp, float currentTankTemp, float currentShopTemp, float currentTankPumpPressure){
   // Convert sensor flots to int and display
@@ -375,4 +432,4 @@ void writeLCD(float currentPanelTemp, float currentTankTemp, float currentShopTe
   lcd.setCursor (10,1); // 
   lcd.print(int(currentTankPumpPressure));  
 }
-
+// **** End of LCD Output ****
