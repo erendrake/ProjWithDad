@@ -66,11 +66,12 @@
   const int Number_Temp_Sensors        =    1; // Panel Temp Child ID
   const int Shop_Temp_ID               =    1; // Shop Temp Child ID
   const int Shop_Heater_ID             =    2; // Shop Heater Child ID ** Not on current system **
+  const int Temp_Setting_ID            =    3; // Temp Setting
   
   // Initialize sensor message
   MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
   MyMessage msg_shop_heater(Shop_Heater_ID, V_STATUS);
-  
+  MyMessage msg_temp_setting(Temp_Setting_ID, V_TEMP);
 
 //************** Start of void before *****************
 void before(){
@@ -103,12 +104,13 @@ void presentation(){
   sendSketchInfo("Shop Electric Heater", "1.0");
   present(Shop_Temp_ID, S_TEMP, "ShopTemp");                 // Shop Temp Child ID 1   
   present(Shop_Heater_ID, S_BINARY, "Heater");               // Shop Electric Heater Child ID 2 
-  
+  delay (50);
+  present(Temp_Setting_ID, S_TEMP, "TempSet");               // Thermostat setting
 
 }
 
 // Hex Addresses of Dallas Temp Sensors
-DeviceAddress Shop_Temp_Addr         = {0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49};  
+DeviceAddress Shop_Temp_Addr         = {0x28, 0x03, 0xA2, 0x29, 0x07, 0x00, 0x00, 0x6E};  
 
 // **** void loop ****
 void loop()
@@ -145,13 +147,9 @@ void loop()
     currentShopTemp=ShopTemp;
     // Send GW the new Shop_Temp
     Serial.println(); 
-    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
-    send(msg_shop_heater.setSensor(Shop_Heater_ID).set(heating,1));
+
 // **** End of Get Shop Temp by Address ****  
-/*  // Initialize sensor message
-  MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
-  MyMessage msg_shop_heater(Shop_Heater_ID, V_STATUS);*/
-  
+ 
   Serial.print("We just got the temp= ");
   Serial.println(ShopTemp);
   temperature = (int(ShopTemp)); 
@@ -164,7 +162,7 @@ void loop()
   setPoint = (int(rawSetPoint));
   Serial.println();
   Serial.print("Temp Set Point=");
-  Serial.println(int(setPoint));
+  Serial.println(setPoint);
   Serial.println();
   Serial.println(sensorValue);
 
@@ -178,9 +176,16 @@ void loop()
     digitalWrite(Heater_Pin,HIGH);            //  Turn on if Temp < setPoint
     digitalWrite(13, HIGH);                  //  Turn on the LED     
     heating=1;
-  }   
-  writeLCD(setPoint, temperature);
-//  delay(1000);                               // delay here to slow down the output so it is easier to read and better control of heater relay  
+  } 
+  // Send Current Information to GW
+    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
+    send(msg_shop_heater.setSensor(Shop_Heater_ID).set(heating,1));
+    send(msg_temp_setting.setSensor(Temp_Setting_ID).set(setPoint,1));
+      
+  // Send Current Informatio to LCD
+    writeLCD(setPoint, temperature);
+  // delay here to slow down the output so it is easier to read and better control of heater relay    
+  delay(1000);                               
 }
 
 //******** Start of printTemperature ***********
@@ -200,41 +205,7 @@ float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 }
 // ***** End printTemperature ********
 
-/*float getTemp(){
-  //returns the temperature from one DS18S20 in DEG Celsius
-  byte data[12];
-  byte addr[8];
-  if ( !ds.search(addr)) {
-      //no more sensors on chain, reset search
-      ds.reset_search();
-      return -1000;
-  }
-  if ( OneWire::crc8( addr, 7) != addr[7]) {
-      Serial.println("CRC is not valid!");
-      return -1000;
-  }
-  if ( addr[0] != 0x10 && addr[0] != 0x28) {
-      Serial.print("Device is not recognized");
-      return -1000;
-  }
-  ds.reset();
-  ds.select(addr);
-  ds.write(0x44,1); // start conversion, with parasite power on at the end
-  byte present = ds.reset();
-  ds.select(addr);    
-  ds.write(0xBE); // Read Scratchpad
-  for (int i = 0; i < 9; i++) { // we need 9 bytes
-    data[i] = ds.read();
-  }
-  ds.reset_search();
-  byte MSB = data[1];
-  byte LSB = data[0];
-  float tempRead = ((MSB << 8) | LSB); //using two's compliment
-  float TemperatureSum = tempRead / 16;
-  TemperatureSum = (TemperatureSum * 9.0)/ 5.0 + 32.0; // Convert Celsius to Fahrenheit
-  return TemperatureSum;
-}
-*/
+
 void writeLCD(int setPoint, int temperature){
     // Convert sensor flots to int and display
   Serial.println("We made it to writeLCD");
