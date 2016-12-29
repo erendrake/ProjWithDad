@@ -70,9 +70,11 @@
   
   // Initialize sensor message
   MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
+//  delay (50);
   MyMessage msg_shop_heater(Shop_Heater_ID, V_STATUS);
+//  delay (50);
   MyMessage msg_temp_setting(Temp_Setting_ID, V_TEMP);
-
+//  delay (50);
 //************** Start of void before *****************
 void before(){
 //  TRANSPORT_DEBUG(PSTR("BLARG:B\n"));
@@ -104,7 +106,7 @@ void presentation(){
   sendSketchInfo("Shop Electric Heater", "1.0");
   present(Shop_Temp_ID, S_TEMP, "ShopTemp");                 // Shop Temp Child ID 1   
   present(Shop_Heater_ID, S_BINARY, "Heater");               // Shop Electric Heater Child ID 2 
-  delay (50);
+//  delay (50);
   present(Temp_Setting_ID, S_TEMP, "TempSet");               // Thermostat setting
 
 }
@@ -134,6 +136,7 @@ void loop()
       sensors.requestTemperatures();
   // Wait for sensors to resolve
   delay(1000);
+
   Serial.println();
   Serial.print("Number of Devices found on bus = ");  
   Serial.println(sensors.getDeviceCount());   
