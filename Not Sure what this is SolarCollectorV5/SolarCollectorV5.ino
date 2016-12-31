@@ -162,7 +162,7 @@ void setup()
 
 // **** Start of Presentation ****
 void presentation() {
-  TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
+//  TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
 
 // Send the sketch version information to the gateway and Controller
   sendSketchInfo("Solar Heater Controller", "V5 RW/CW 12/7/16");
@@ -312,15 +312,15 @@ void processAtticFan(){
   if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){
     digitalWrite(attic_Louver_Pin, LOW);  
     atticLouverStatus = true;
-    TRANSPORT_DEBUG(PSTR("Attic Louver: Opening!\n"));
+//    TRANSPORT_DEBUG(PSTR("Attic Louver: Opening!\n"));
     //wait for Louver to open
     delay(fanDelayMs);
-    TRANSPORT_DEBUG(PSTR("Attic Louver: Open!\n"));
+//    TRANSPORT_DEBUG(PSTR("Attic Louver: Open!\n"));
 //  Send GW New Status
     send(msg_attic_louver.setSensor(Attic_Louver_ID).set(1));
     digitalWrite(attic_Fan_Pin, LOW);  
     atticFanStatus = true;
-    TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
+//    TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
 //  Send GW New Status
     send(msg_attic_fan.setSensor(Attic_Fan_ID).set(1));
     return;
@@ -328,7 +328,7 @@ void processAtticFan(){
   else if(systemDifference < systemDiffOff && atticFanStatus == true && atticLouverStatus == true){
     digitalWrite(attic_Louver_Pin, HIGH);  
     atticLouverStatus = false;
-    TRANSPORT_DEBUG(PSTR("Attic Louver: Closing!\n"));
+//    TRANSPORT_DEBUG(PSTR("Attic Louver: Closing!\n"));
 //  Send GW New Status
     send(msg_attic_louver.setSensor(Attic_Louver_ID).set(0));
     //wait for fan to stop 
@@ -336,7 +336,7 @@ void processAtticFan(){
 
     digitalWrite(attic_Fan_Pin, HIGH);  
     atticFanStatus = false;
-    TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
+//    TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
 //  Send GW New Status
     send(msg_attic_fan.setSensor(Attic_Fan_ID).set(0));
     return;

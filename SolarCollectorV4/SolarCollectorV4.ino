@@ -1,5 +1,5 @@
 /**
-"Solar Heater Controller", "1.1 RW/CW 11/11/16" 
+"SolarHeaterControllerV4", "1.2 RW/CW 12/30/16"
  * Example sketch showing how to send in DS1820B OneWire temperature readings back to the controller
  * http://www.mysensors.org/build/temp
  */
@@ -29,7 +29,7 @@
   #define attic_Louver_Closed HIGH
   #define attic_Fan_On LOW
   #define attic_Fan_Off HIGH
-
+  
 // Solar addons
 //Temperature Thresholds
   const int systemDiffOn = SYSTEM_DIFF_ON;
@@ -43,7 +43,8 @@
   const int minimumFanOnMs = 60000;
   const int fanDelayMs = 10000;
   const int loopSleepTimerMs = 10000;
-
+  const int buttonPin = A5;    // the number of the pushbutton pin
+  
 // **** Temp Sensor Pin ****
   const int tempBusPin = TEMP_BUS_PIN;
 
@@ -53,6 +54,9 @@
 // **** Flow Sensor Stuff **** 
   volatile int flowCounter; //measuring the rising edges of the signal
   const int flowSensorPin = 21; //The pin location of the sensor
+
+  int buttonState;             // the current reading from the input pin
+  int lastButtonState = LOW;   // the previous reading from the input pin
 
 // **** Start OneWire and Dallas Temp ****
   OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -67,7 +71,7 @@
   const char blarg = "hi buddy!";
 
 // Define Child ID's for MySensors GW
-  const int Number_Child_IDs           =    9; // Number of Child ID's
+  const int Number_Child_IDs           =   15; // Number of Child ID's
   const int Number_Temp_Sensors        =    4; // Panel Temp Child ID
   const int Solar_Panel_Temp_ID        =    0; // Panel Temp Child ID
   const int Tank_Temp_ID               =    1; // Tank Temp Child ID
@@ -79,6 +83,11 @@
   const int Attic_Fan_ID               =   13; // Attic Fan on/off
   const int Attic_Louver_ID            =   14; // Attic Louver open/closed
   const int Tank_Heater_ID             =   15; // Storage Tank Heater on/off
+  const int HVAC_Fan_Pump_ID           =   20; // Pump and Fan for HVAC
+  const int General_Alarm_ID           =   30; // Alarms to Vera and Local Buzzer
+  const int Test_Button_ID             =   31; // Test Button
+  const int HVAC_Set_Point_ID          =   32; // Pot to Control Shop Temp (controls HVAV Pump and Fan)  
+  const int Moton_Sensor_ID            =   33; // Moton Sensor for Alarm 
 
 // Set Current Sensor Readings to Zero or Not Found
   float TankTemp = -127.0;
@@ -94,7 +103,7 @@
   float currentTankPumpFlow = 0.0;
   float tankPumpPressure = 0.0;
   float currentTankPumpPressure = 0.0;
-
+  float hvacSetPoint = 0.0;
 // Zero out variables used with LCD
   int intSolarPanelTemp = 0;
   int intTankTemp = 0;
@@ -109,7 +118,10 @@
   bool attic_Louver = false;
   bool atticFanStatus = false;
   bool atticLouverStatus = false;
-  
+  bool generalAlarmStatus = false;
+  bool hvacFanPumpStatus = false;
+  bool motonSensorStatus = false;
+    
 // **** Hex Addresses of Dallas Temp Sensors ****
   DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x80, 0xEA, 0x29, 0x07, 0x00, 0x00, 0x0A};
   DeviceAddress Tank_Temp_Addr =        {0x28, 0x03, 0xA2, 0x29, 0x07, 0x00, 0x00, 0x6E};
@@ -126,6 +138,7 @@
   MyMessage msg_attic_temp(Attic_Temp_ID ,V_TEMP);
 //  delay(50);
   MyMessage msg_tank_pump(Tank_Pump_ID, V_STATUS);
+//
   MyMessage msg_tank_heater(Tank_Heater_ID, V_STATUS);
 //  delay(50);
   MyMessage msg_tank_pump_pressure(Tank_Pump_Pressure_ID, V_PRESSURE);
@@ -136,9 +149,21 @@
 //  delay(50);
   MyMessage msg_attic_louver(Attic_Louver_ID, V_STATUS);
 //  delay(50);
+  MyMessage msg_general_alarm(General_Alarm_ID, V_STATUS);
 
+  MyMessage msg_test_button(Test_Button_ID, V_STATUS);
+
+  MyMessage msg_HVAC_Fan_Pump(HVAC_Fan_Pump_ID, V_STATUS);
+
+  MyMessage msg_set_temp_pot_heat(HVAC_Set_Point_ID, V_HVAC_SETPOINT_HEAT);
+
+  MyMessage msg_set_temp_pot_cool(HVAC_Set_Point_ID, V_HVAC_SETPOINT_COOL);
+
+  MyMessage msg_moton_sensor(Moton_Sensor_ID, V_TRIPPED);
+
+  
 //************** Start of void before *****************
-void before() // ??????
+void before() // Who Calls This ???????????
 {
 //  TRANSPORT_DEBUG(PSTR("BLARG:B\n"));
   // Startup up the OneWire library
@@ -152,12 +177,18 @@ void before() // ??????
   sensors.setResolution(Attic_Temp_Addr, tempResolution);
 }
 // **** End of void before ****
+
 // **** 2 line LCD Stuff ****
   // Initialize display. Google the correct settings for your display. 
   // The follwoing setting should work for the recommended display in the MySensors "shop".
   //   LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
-//  LiquidCrystal lcd(10, 11, 12, 13, 14, 15, 16);
-  LiquidCrystal lcd(2, 3, 4, 5, 6, 7, 8);
+  LiquidCrystal lcd(10, 11, 12, 13, A0, A1, A2);
+
+// the following variables are long's because the time, measured in miliseconds,
+// will quickly become a bigger number than can be stored in an int.
+  long lastDebounceTime = 0;  // the last time the output pin was toggled
+  long debounceDelay = 50;    // the debounce time; increase if the output flickers
+
 // **** Start of Void Setup ****
 void setup()  
 { 
@@ -165,39 +196,41 @@ void setup()
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
   setupPins(); 
-//  setupLCD(); Bus 2
-//  lcd.begin (16,2); // <<-- our LCD is a 16x2, change for your LCD if needed
-//  lcd.clear (); // go home on LCD
-//  lcd.print ("  LCD  ");
   lcd.begin(16, 2);
-  lcd.clear();//clears the LCD and positions the cursor in the upper-left corner
-  lcd.print("hello, world!");// Print a message to the LCD.
-  lcd.setCursor(2,1); // set to the 3th column and 2nd row
-  lcd.print("Seeedstudio");// Print a message to the LCD.
+  lcd.clear(); // clear and cursor in upper left corner
+  lcd.setCursor(0, 0);
+  lcd.print("Hello, World");
+  lcd.setCursor(0, 1);
+  lcd.print("Hello, me");// Flow Sensor Setup
+  pinMode(buttonPin, INPUT);
 // Flow Sensor Setup
-pinMode(flowSensorPin, INPUT); //initializes digital pin 2 as an input
-attachInterrupt(0, rpm, RISING); //and the interrupt is attached
+  pinMode(flowSensorPin, INPUT); //initializes digital pin 21 ON Mega as an input
+  attachInterrupt(0, rpm, RISING); //and the interrupt is attached
 }
 
 // **** End of Void Setup ****
 void setupPins()
 {
-  // Digital
+// Digital
   pinMode(tankPumpPin, OUTPUT);   
   digitalWrite(tankPumpPin, HIGH);  
   pinMode(tank_Heater_Pin, OUTPUT);
   digitalWrite(tank_Heater_Pin, HIGH);
-  pinMode(HVAC_Blower_Fan_and_Pump, OUTPUT);
-  digitalWrite(HVAC_Blower_Fan_and_Pump, HIGH);  
+  pinMode(HVAC_Fan_Pump_Pin, OUTPUT);
+  digitalWrite(HVAC_Fan_Pump_Pin, HIGH);  
   pinMode(attic_Fan_Pin, OUTPUT);   
   digitalWrite(attic_Fan_Pin, HIGH);  
   pinMode(attic_Louver_Pin, OUTPUT);   
   digitalWrite(attic_Louver_Pin, HIGH);
   pinMode(tank_Pump_Flow_Pin, INPUT);    
-  // Analog
+  pinMode(general_Alarm_Pin, OUTPUT);
+  digitalWrite(general_Alarm_Pin, LOW);  
+  pinMode(buttonPin, INPUT);
+// Analog
   pinMode(tank_Pump_Pressure_Pin, INPUT);  
+  pinMode(Set_Temp_Pot_Pin, INPUT);
 }
-
+// For IC2 Display
 /*void setupLCD()
 {
 // LCD Setup
@@ -214,7 +247,7 @@ void presentation()
 //  TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
 
 // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("SolarHeaterControllerV4", "1.2 RW/CW 12/29/16");
+  sendSketchInfo("SolarHeaterControllerV4", "1.2 RW/CW 12/30/16");
 
 // Fetch the number of attached temperature sensors  
   numSensors = Number_Temp_Sensors;
@@ -240,6 +273,12 @@ void presentation()
   present(Attic_Fan_ID, S_BINARY, "AtticFan");                  // Attic Fan Child ID 13
   delay(100);
   present(Attic_Louver_ID, S_BINARY, "AtticLouver");            // Attic Louver Child ID 14
+  delay(100);
+  present(General_Alarm_ID, S_BINARY, "GeneralAlarm");         // General Alarm Over Heat and Test Button
+  delay(100);
+  present(Test_Button_ID, S_BINARY, "TestButton");             // Test Button Sets off the General Alarm
+  delay(100);
+  present(HVAC_Set_Point_ID, S_HEATER, "TempSetPoint"); 
 }
 // **** End Of Presentation ****
 
@@ -271,10 +310,10 @@ void loop()
   // Disable Interrupts Get Count Over the Passed 1 sec and Compute Flow
   cli(); //Disable interrupts
   tankPumpFlow = (flowCounter * 60 / 5.5); //(Pulse frequency x 60) / 5.5Q, = flow rate in L/hour
-  currentTankPumpFlow = tankPumpFlow;
+  currentTankPumpFlow = (tankPumpFlow,2);
   Serial.println ();
   Serial.print ("Tank Pump Flow= ");
-  Serial.print (tankPumpFlow, DEC); //Prints the number calculated above
+  Serial.print (tankPumpFlow, 2); //Prints the number calculated above
   Serial.print (" L/hour\r\n"); //Prints "L/hour" and returns a new line  
   
   Serial.print("Solar Panel Temperature is:   ");
@@ -308,6 +347,7 @@ void loop()
   send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
 
   Serial.print("Attic Temperature is:   ");
+  // Fetch Temperature for Attic by Sensor Address
   AtticTemp = printTemperature(sensors, Attic_Temp_Addr);
   Serial.println();
   currentAtticTemp=AtticTemp;
@@ -322,6 +362,7 @@ void loop()
   send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlow,1)); 
   processTankPump();
   writeLCD();  // Send results to LCD Dispaly 
+  Test_Button ();
 }
 //******************** End Of Void Loop ************************
 
@@ -337,6 +378,9 @@ void processTankPump()
     Serial.println("System Over Temp and PanelPump: Off!");
     digitalWrite(tankPumpPin, HIGH);
     tankPump = false;  
+    generalAlarmStatus = true;      
+    digitalWrite(general_Alarm_Pin, HIGH);
+    send(msg_general_alarm.setSensor(General_Alarm_ID).set(generalAlarmStatus,1));    
     return;
   }
   if (systemDifference > systemDiffOn && tankPump == false){
@@ -370,8 +414,6 @@ float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
    }
 }
 // ***** End printTemperature ********
-
-
 
 // Panel Pump Pressure Sensor Check to see if it's changed
 void readTankPumpPressure()
@@ -420,5 +462,45 @@ void writeLCD()
   lcd.print("PP:");
   lcd.setCursor (10,1); // 
   lcd.print(int(currentTankPumpPressure));  
+  lcd.setCursor (13,1);
+  lcd.print ("F");
+  lcd.setCursor (14,1);
+  lcd.print(currentTankPumpFlow, 1);
+}
+
+void Test_Button ()
+{
+if (generalAlarmStatus == true) return ; // If True Return Because System is Already in Alarm
+// Test Button Will Set off Alarm
+  // read the state of the switch into a local variable:
+  int reading = digitalRead(buttonPin);
+  // check to see if you just pressed the button
+  // (i.e. the input went from LOW to HIGH),  and you've waited
+  // long enough since the last press to ignore any noise:
+
+  // If the switch changed, due to noise or pressing:
+  if (reading != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
+  }
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer
+    // than the debounce delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (reading != buttonState) {
+      buttonState = reading;
+
+      // only toggle the Alarm if the new button state is HIGH
+      if (buttonState == HIGH) {
+        generalAlarmStatus = true;      
+        digitalWrite(general_Alarm_Pin, HIGH);
+        send(msg_general_alarm.setSensor(General_Alarm_ID).set(generalAlarmStatus,1));    
+      }
+    }
+  }
+  // save the reading.  Next time through the loop,
+  // it'll be the lastButtonState:
+  lastButtonState = reading;
 }
 //*********( THE END )***********

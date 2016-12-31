@@ -11,29 +11,30 @@ const int TANK_PUMP_PIN = 4;
 #define MINIMUM_PUMP_ON_SECONDS 120
 
 // Blower Fan and Pump Pin
-const int HVAC_Blower_Fan_and_Pump = 6;
+const int HVAC_Fan_Pump_Pin = 23;
+const int Set_Temp_Pot_Pin = A14;
 
 // Attic Fan Pin
-const int attic_Fan_Pin = 7;
+const int attic_Fan_Pin = 24;
 
 // Attic Louver Pin
-const int attic_Louver_Pin = 8;
+const int attic_Louver_Pin = 25;
 
 // Storage Tank Heater Pin 
-const int tank_Heater_Pin = 5;
+const int tank_Heater_Pin = 26;
 
 // Solar Panel Pump Pressure Sensor
-#define tank_Pump_Pressure_Pin A1
+#define tank_Pump_Pressure_Pin A15
 
 // Solar Panel Pump Flow Sensor
-const int tank_Pump_Flow_Pin = 2;
+const int tank_Pump_Flow_Pin = 21;
 
 //Diagnostic LED
-const int run_Time_Pin= 6;
+const int run_Time_Pin= 27;
 const int general_Alarm_Pin= 9;
 
 // Define Sensors and Controllers
-const int TEMP_BUS_PIN = 3;
+const int TEMP_BUS_PIN = 22;
 #define TEMP_POLLING_DELAY_SECONDS 3
 #define SOLAR_PANEL_TEMP_NAME "Solar_Panel_Temp"
 #define TANK_TEMP_NAME "Tank_Temp"
