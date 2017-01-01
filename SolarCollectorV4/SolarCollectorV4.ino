@@ -7,7 +7,7 @@
 // Running on Mega 1280
 // Enable debug prints to serial monitor
   #define MY_DEBUG 
-
+//  #define MY_SPECIAL_DEBUG
 // Enable and select radio type attached
   #define MY_RADIO_NRF24
   #define MY_NODE_ID 25
@@ -19,7 +19,7 @@
   #include <DallasTemperature.h>
   #include <OneWire.h>
   #define COMPARE_TEMP 1 // Send temperature only if changed? 1 = Yes 0 = No
-  #define ONE_WIRE_BUS 22 // Pin where dallase sensor is connected 
+  #define ONE_WIRE_BUS 22 // Pin where dallase sensors are connected 
   #define MAX_ATTACHED_DS18B20 16
   #include "config.h"
   #include <LiquidCrystal.h>; 

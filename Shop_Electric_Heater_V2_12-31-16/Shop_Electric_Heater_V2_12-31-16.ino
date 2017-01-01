@@ -27,23 +27,24 @@
   #include <Wire.h>
   #include <LiquidCrystal_I2C.h>
   #define COMPARE_TEMP 1 // Send temperature only if changed? 1 = Yes 0 = No
-  #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
+//  #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
   #define MAX_ATTACHED_DS18B20 16
 
   
   bool timeReceived = false;
   unsigned long lastUpdate=0, lastRequest=0;
   
-//  const int ONE_WIRE_BUS = 3;                     // DS18S20 Signal pin on digital 3
+  const int ONE_WIRE_BUS = 3;                     // DS18S20 Signal pin on digital 3
   const int Heater_Pin = 4;                      // Shop heater relay on pin 4
-  const int hysteresis = 5;
   const int tempResolution = 9;
-  int temperature = 0;
-  int setPoint = 0;
   // Set Default Readings
+  float temperature = 0.0;
+  int intSetPoint = 0; 
+  float setPoint = 0.0;
   float ShopTemp = -127.0;
   float currentShopTemp = -127.0;
-  
+  float potValue = 0.0;
+    
  // Start OneWire and Dallas Temp 
   OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
   DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature. 
@@ -73,7 +74,7 @@
 //  delay (50);
   MyMessage msg_shop_heater(Shop_Heater_ID, V_STATUS);
 //  delay (50);
-  MyMessage msg_temp_setting(Temp_Setting_ID, V_TEMP);
+  MyMessage msg_temp_setting(Temp_Setting_ID, V_HVAC_SETPOINT_HEAT);
 //  delay (50);
 //************** Start of void before *****************
 void before(){
@@ -97,20 +98,39 @@ void setup(){
     requestTime();  
   // initialize the lcd for 16 chars 2 lines and turn on backlight
     lcd.begin(16,2); 
-    lcd.clear();
-    Serial.println("End of Void Setup");
-}
 
+// ------- Quick 3 blinks of backlight  -------------
+  for(int i = 0; i< 3; i++)
+  {
+    lcd.backlight();
+    delay(250);
+    lcd.noBacklight();
+    delay(250);
+  }
+  lcd.backlight(); // finish with backlight on  
+
+//-------- Write characters on the display ------------------
+// Wait and then tell user they can start the Serial Monitor and type in characters to
+// Display. (Set Serial Monitor option to "No Line Ending")
+  lcd.clear();
+  lcd.setCursor(0,0); //Start at character 0 on line 0
+  lcd.print("End of Void Setup");
+  Serial.println("End of Void Setup");
+}
 
 // **** Presentation ****
 void presentation(){
   // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("Shop Electric Heater", "1.0");
+  sendSketchInfo("Shop Electric HeaterV2", "2.0");
   present(Shop_Temp_ID, S_TEMP, "ShopTemp");                 // Shop Temp Child ID 1   
+  delay(100);
   present(Shop_Heater_ID, S_BINARY, "Heater");               // Shop Electric Heater Child ID 2 
-//  delay (50);
-  present(Temp_Setting_ID, S_TEMP, "TempSet");               // Thermostat setting
-
+  delay (100);
+  present(Temp_Setting_ID, S_HEATER, "TempSet");               // Thermostat setting
+  lcd.clear();
+  lcd.setCursor(0,0); //Start at character 0 on line 0
+  lcd.print("End of Pres");
+  Serial.println("End of Presentation");
 }
 
 // Hex Addresses of Dallas Temp Sensors
@@ -119,7 +139,7 @@ DeviceAddress Shop_Temp_Addr         = {0x28, 0x03, 0xA2, 0x29, 0x07, 0x00, 0x00
 // **** void loop ****
 void loop()
 {
-
+    lcd.print("Start Void Loop");
   // Get Time From GW
   unsigned long now = millis();
   // If no time has been received yet, request it every 10 second from controller
@@ -146,54 +166,31 @@ void loop()
   Serial.println();   
 
 // **** Get Shop Temp by Address ****
-    Serial.print("Shop Temperature is:   ");
+    Serial.print("Shop Temperature is: ");
     ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
-    Serial.println();
     currentShopTemp=ShopTemp;
-    // Send GW the new Shop_Temp
     Serial.println(); 
-
-// **** End of Get Shop Temp by Address ****  
- 
-  Serial.print("We just got the temp= ");
-  Serial.println(ShopTemp);
-  temperature = (int(ShopTemp)); 
+    temperature = (ShopTemp); 
   // read the input on analog pin 0:
-  int sensorValue = analogRead(A0);
-  // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 5V):
-  // float voltage = sensorValue * (5.0 / 1023.0);
-  // print out the value you read:
-  float rawSetPoint=(sensorValue*0.039)+40.0;
-  setPoint = (int(rawSetPoint));
-  Serial.println();
-  Serial.print("Temp Set Point=");
-  Serial.println(setPoint);
-  Serial.println();
-  Serial.println(sensorValue);
+    float rawSetPoint = 0.0;
+    potValue = analogRead(A0);
+    Serial.print("Pot Value=");
+    Serial.println(potValue, 1);
+    rawSetPoint=(potValue*0.039)+40.0;
+    setPoint = (rawSetPoint);
+    intSetPoint = int(setPoint);
+    Serial.println();
+    Serial.print("Temp Set Point=");
 
-  // See if we need to turn on the heater
-  if (temperature >= setPoint); {
-    digitalWrite(Heater_Pin,LOW);           // Turn off if Temp >= setPoint
-    digitalWrite(13, LOW);                  //  Turn off the LED
-    heating=0;
-  }
-  if (temperature <= (setPoint-hysteresis)) {
-    digitalWrite(Heater_Pin,HIGH);            //  Turn on if Temp < setPoint
-    digitalWrite(13, HIGH);                  //  Turn on the LED     
-    heating=1;
-  } 
-  // Send Current Information to GW
-    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
-    send(msg_shop_heater.setSensor(Shop_Heater_ID).set(heating,1));
-    send(msg_temp_setting.setSensor(Temp_Setting_ID).set(setPoint,1));
-      
-  // Send Current Informatio to LCD
-    writeLCD(setPoint, temperature);
-  // delay here to slow down the output so it is easier to read and better control of heater relay    
+    Serial.println(int(setPoint));
+    Serial.println();
+  // Go Turn the Heater On If Needed
+    processHeater ();
   delay(1000);                               
 }
-
-//******** Start of printTemperature ***********
+// **** End of Void Loop ****
+ 
+// **** Start of printTemperature ****
 float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
    float tempF = sensors.getTempF(deviceAddress);
@@ -204,26 +201,63 @@ float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
    else
    {
    Serial.print("F: ");
-   Serial.print(tempF);
+   Serial.println(tempF);
    return(tempF);
    }
 }
-// ***** End printTemperature ********
+// **** End printTemperature ****
 
+// **** Start of processHeater ****
+void processHeater ()
+{
+  // See if we need to turn on the heater
+  if (temperature <= (setPoint-2.0)) 
+    {
+    digitalWrite(Heater_Pin,HIGH);            //  Turn on Heater if Temp <= setPoint - 2 
+    digitalWrite(13, HIGH);                  //  Turn on the LED     
+    heating=true;
+    Serial.println("Heater On");
+    }
+  else    
+  {
+    if (temperature >= (setPoint+2.0)) 
+    {
+    digitalWrite(Heater_Pin,LOW);           // Turn Heater off if Temp >= setPoint + 2
+    digitalWrite(13, LOW);                  //  Turn off the LED
+    heating=false;
+    Serial.println("Heater Off");
+    }
+  }    updateGW(); // Update GW and LCD
+   
+}
+// **** End of processHeater ****
 
-void writeLCD(int setPoint, int temperature){
+// **** Start of updateGW ****
+void updateGW()
+{
+  // Send Current Information to GW and LCD
+
+    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
+    send(msg_shop_heater.setSensor(Shop_Heater_ID).set(heating,1));
+    send(msg_temp_setting.setSensor(Temp_Setting_ID).set(intSetPoint, 1));
+      
+  // Send Current Informatio to LCD
+    writeLCD();
+  // delay here to slow down the output so it is easier to read and better control of heater relay   
+  return;
+}
+// **** End of updateGW ****
+
+// **** Start of writeLCD ****
+void writeLCD(){
     // Convert sensor flots to int and display
   Serial.println("We made it to writeLCD");
   Serial.print("Temp Set Point= ");
-  Serial.println(int(setPoint));
+  Serial.println(setPoint, 1);
   Serial.print("Shop Temp= ");
-  Serial.println(int(temperature));  
+  Serial.println(temperature, 1);  
+  lcd.clear();
   lcd.home();
-  lcd.setCursor (0,0); // go to start of 1st line
-  lcd.print("                ");
-  lcd.setCursor (0,1); // go to start of 1st line
-  lcd.print("                ");
-  lcd.setCursor (0,0); // go to start of 1st line
   tmElements_t tm;
   RTC.read(tm);
   lcd.print("Time: ");
@@ -234,21 +268,26 @@ void writeLCD(int setPoint, int temperature){
   lcd.print(":");
   printDigits(tm.Second);
   lcd.setCursor (0,1);
-  lcd.print("TSet:");     
+  lcd.print("TSet=");     
   lcd.setCursor (5,1); // 
   lcd.print(int(setPoint));
   lcd.setCursor (9,1); // 
   lcd.print("ST:");
   lcd.setCursor (12,1); // 
-  lcd.print(int(temperature));
+  lcd.print(temperature, 1);
 }
+// **** End of writeLCD ****
 
+
+// **** Start of pintDigits ****
 void printDigits(int digits){
   if(digits < 10)
     lcd.print('0');
   lcd.print(digits);
 }
+// **** End of pintDigits ****
 
+// **** Start of receiveTime ****
 // This is called when a new time value was received
 void receiveTime(unsigned long controllerTime) {
   // Ok, set incoming time 
@@ -257,3 +296,6 @@ void receiveTime(unsigned long controllerTime) {
   RTC.set(controllerTime); // this sets the RTC to the time from controller - which we do want periodically
   timeReceived = true;
 }
+// **** End of receiveTime ****
+
+// **** The END ****

@@ -12,7 +12,7 @@ const int TANK_PUMP_PIN = 4;
 
 // Blower Fan and Pump Pin
 const int HVAC_Fan_Pump_Pin = 23;
-const int Set_Temp_Pot_Pin = A14;
+#define Set_Temp_Pot_Pin = A14;
 
 // Attic Fan Pin
 const int attic_Fan_Pin = 24;
