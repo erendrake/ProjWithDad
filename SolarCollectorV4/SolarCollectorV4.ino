@@ -104,7 +104,8 @@
   float tankPumpPressure = 0.0;
   float currentTankPumpPressure = 0.0;
   float hvacSetPoint = 0.0;
-// Zero out variables used with LCD
+  float systemDifference = 0.0;
+  // Zero out variables used with LCD
   int intSolarPanelTemp = 0;
   int intTankTemp = 0;
   int intShopTemp = 0;  
@@ -297,11 +298,11 @@ void loop()
   Serial.println(sensors.getDeviceCount());   
   Serial.print("Getting temperatures... ");  
   Serial.println();   
-    
+
   // **** Tell all Dallas Sensors to take their Temperature ****
   sensors.requestTemperatures();
-
-  // Zero Flow Counter and Enable Interrupts
+ 
+ // Zero Flow Counter and Enable Interrupts
   flowCounter = 0; //Set NbTops to 0 ready for calculations
   sei(); //Enables interrupts
   
@@ -316,57 +317,39 @@ void loop()
   Serial.print (tankPumpFlow, 2); //Prints the number calculated above
   Serial.print (" L/hour\r\n"); //Prints "L/hour" and returns a new line  
   
-  Serial.print("Solar Panel Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  PanelTemp =  printTemperature(sensors, Solar_Panel_Temp_Addr);
-  currentPanelTemp = PanelTemp;
   Serial.print("Panel Temp=");
-  Serial.println(int(PanelTemp));
-  Serial.println();
-  // Send in the new Solar_Panel_Temp
-  send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(PanelTemp,1));
+  PanelTemp =  printTemperature(sensors, Solar_Panel_Temp_Addr);
+  currentPanelTemp = tempF;
 
-  Serial.print("Storage Tank Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  TankTemp = printTemperature(sensors, Tank_Temp_Addr);
-  currentTankTemp = TankTemp;
   Serial.print("Tank Temp=");
-  Serial.println(int(TankTemp));  
-  Serial.println();
-  // Send in the new Tank_Temp
-  send(msg_tank_temp.setSensor(Tank_Temp_ID).set(TankTemp,1));
+  TankTemp = printTemperature(sensors, Tank_Temp_Addr);
+  currentTankTemp = tempF;
      
-  Serial.print("Shop Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
-  currentShopTemp = ShopTemp;
   Serial.print("Shop Temp=");
-  Serial.println(int(ShopTemp));
-  Serial.println();
-  // Send in the new Shop_Temp
-  send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
-
-  Serial.print("Attic Temperature is:   ");
+  ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
+  currentShopTemp = tempF;
+  
   // Fetch Temperature for Attic by Sensor Address
+  Serial.print("Attic Temp=");
   AtticTemp = printTemperature(sensors, Attic_Temp_Addr);
-  Serial.println();
-  currentAtticTemp=AtticTemp;
-  // Send GW the new Attic_Temp
-  Serial.println(); 
-  send(msg_attic_temp.setSensor(Attic_Temp_ID).set(AtticTemp,1));
+  currentAtticTemp = tempF;
 
 // Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
   readTankPumpPressure(); // Get Tank Pump Pressure
   currentTankPumpPressure = tankPumpPressure;
-  send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure,1));
-  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlow,1)); 
   processTankPump();
-  writeLCD();  // Send results to LCD Dispaly 
+  processAtticFan();
+  writeLCD();  // Send results to LCD Dispaly and update MySenors GW 
   Test_Button ();
 }
 //******************** End Of Void Loop ************************
 
-// All Relays and LED's are Active LOW
+/*-----( Declare User-written Functions )-----*/
+
+// All Relays and LED's are Active LOW  ??? Not sure of this.
 // Need to add tests for pressure and flow??????
 
 // **** Start of processTankPump ****
@@ -396,12 +379,48 @@ void processTankPump()
 }
 // **** End of processTankPump ****
 
-/*-----( Declare User-written Functions )-----*/
+
+//*********** Stat of processAtticFan *************
+// All Relays and LED's are Active LOW ???? Not sure of this
+
+void processAtticFan(){
+  Serial.println("We made it to the processAtticFan");
+  float systemDifference = AtticTemp - ShopTemp;
+  if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){
+    digitalWrite(attic_Louver_Pin, attic_Louver_Open);  
+    atticLouverStatus = true;
+//    TRANSPORT_DEBUG(PSTR("Attic Louver: Opening!\n"));
+    //wait for Louver to open
+    delay(fanDelayMs);
+//    TRANSPORT_DEBUG(PSTR("Attic Louver: Open!\n"));
+//  Send GW New Status
+    digitalWrite(attic_Fan_Pin, attic_Fan_On);  
+    atticFanStatus = true;
+//    TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
+//  Send GW New Status
+	updateSystemStats();
+    return;
+  }
+  else if(systemDifference < systemDiffOff && atticFanStatus == true && atticLouverStatus == true){
+    digitalWrite(attic_Louver_Pin, attic_Louver_Closed);  
+    atticLouverStatus = false;
+//    TRANSPORT_DEBUG(PSTR("Attic Louver: Closing!\n"));
+    //wait for fan to stop 
+    delay(fanDelayMs);
+    digitalWrite(attic_Fan_Pin, attic_Fan_Off);  
+    atticFanStatus = false;
+//    TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
+//  Send GW New Status
+	updateSystemStats();
+    return;
+  }
+}// ********** End processAtticFan ************
+
 
 //******** Start of printTemperature ***********
 float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
-   float tempF = sensors.getTempF(deviceAddress);
+   tempF = sensors.getTempF(deviceAddress);
    if (tempF == -127.00) 
    {
    Serial.print("Error getting temperature  ");
@@ -409,7 +428,7 @@ float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
    else
    {
    Serial.print("F: ");
-   Serial.print(tempF);
+   Serial.print(tempF\r\n);
    return(tempF);
    }
 }
@@ -435,6 +454,22 @@ void readTankPumpPressure()
   
   // if pressure is <20 PSI shut pump off and set an alarm 
 }  
+
+void updateSystemStats ();
+[
+
+  send(msg_attic_louver.setSensor(Attic_Louver_ID).set(atticFanStatus));
+  send(msg_attic_fan.setSensor(Attic_Fan_ID).set(atticFanStatus));
+  send(msg_attic_temp.setSensor(Attic_Temp_ID).set(AtticTemp,1));
+  send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
+  Serial.println(int(ShopTemp));
+  send(msg_tank_temp.setSensor(Tank_Temp_ID).set(TankTemp,1));
+  send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(PanelTemp,1));
+  send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure,1));
+  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlow,1)); 
+  send(msg_general_alarm.setSensor(General_Alarm_ID).set(generalAlarmStatus,1)); 
+
+}
 
 //OUTPUT STUFFS
 void writeLCD()
@@ -495,7 +530,7 @@ if (generalAlarmStatus == true) return ; // If True Return Because System is Alr
       if (buttonState == HIGH) {
         generalAlarmStatus = true;      
         digitalWrite(general_Alarm_Pin, HIGH);
-        send(msg_general_alarm.setSensor(General_Alarm_ID).set(generalAlarmStatus,1));    
+		updateSystemStatus();
       }
     }
   }
