@@ -10,6 +10,9 @@
 const int TANK_PUMP_PIN = 4;
 #define MINIMUM_PUMP_ON_SECONDS 120
 
+// Flow Sensor Pin
+const int FLOW_SENSOR_PIN = 21;
+
 // Blower Fan and Pump Pin
 const int HVAC_Fan_Pump_Pin = 23;
 #define Set_Temp_Pot_Pin = A14;
@@ -19,6 +22,9 @@ const int attic_Fan_Pin = 24;
 
 // Attic Louver Pin
 const int attic_Louver_Pin = 25;
+
+// Gable Louver Pin
+const int GABLE_LOUVER_PIN = 27;
 
 // Storage Tank Heater Pin 
 const int tank_Heater_Pin = 26;
@@ -45,6 +51,8 @@ const int TEMP_BUS_PIN = 22;
 #define TANK_PUMP_FLOW_NAME "Tank_Pump_Flow"
 #define ATTIC_FAN_NANE "Attic_Fan";
 #define ATTIC_LOUVER_NAME "Attic_Louver";
+#define GABLE_LOUVER_NAME "Gabel_Louver";
+#define COUPLA_FAN_NAME "Coupla_Fan";
 
 
 /*
