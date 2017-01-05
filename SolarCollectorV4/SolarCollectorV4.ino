@@ -25,17 +25,20 @@
   #include <LiquidCrystal.h>; 
 //  #include <LCD.h>
 //  #include <LiquidCrystal_I2C.h>
-/*  #define attic_Louver_Open LOW
+  #define attic_Louver_Open LOW
   #define attic_Louver_Closed HIGH
   #define attic_Fan_On LOW
-  #define attic_Fan_Off HIGH*/  
- 
+  #define attic_Fan_Off HIGH
+  
 // Solar addons
 //Temperature Thresholds
   const int systemDiffOn = SYSTEM_DIFF_ON;
   const int systemDiffOff = SYSTEM_DIFF_OFF;
   const int systemOverheat = SYSTEM_OVERHEAT;
   float systemDifference = - 20; 
+
+// Thermostat
+  const int Set_Temp_Pot_Pin = A14;
 
 // **** Timers ****
   const int minimumPumpOnSeconds = MINIMUM_PUMP_ON_SECONDS;
@@ -45,16 +48,15 @@
   const int loopSleepTimerMs = 10000;
   const int buttonPin = A5;    // the number of the pushbutton pin
   
-// **** Temp Sensor Pin ****
-  const int tempBusPin = TEMP_BUS_PIN;
+// **** Tank Pressure Sensor Pin ****
+  const int tank_Pump_Pressure_Pin = A15;
 
 // **** Relay Pins ****
   const int tankPumpPin = TANK_PUMP_PIN;
-  const int gableLouverPin = GABLE_LOUVER_PIN;
-  
+
 // **** Flow Sensor Stuff **** 
   volatile int flowCounter; //measuring the rising edges of the signal
-  const int flowSensorPin = FLOW_SENSOR_PIN; //The pin location of the sensor
+  const int flowSensorPin = 21; //The pin location of the sensor
 
   int buttonState;             // the current reading from the input pin
   int lastButtonState = LOW;   // the previous reading from the input pin
@@ -72,37 +74,24 @@
   const char blarg = "hi buddy!";
 
 // Define Child ID's for MySensors GW
-  const int Number_Child_IDs           =   18; // Number of Child ID's
-  const int Number_Temp_Sensors        =    4; // Number of Temp Sensors
+  const int Number_Child_IDs           =   15; // Number of Child ID's
+  const int Number_Temp_Sensors        =    4; // Panel Temp Child ID
   const int Solar_Panel_Temp_ID        =    0; // Panel Temp Child ID
   const int Tank_Temp_ID               =    1; // Tank Temp Child ID
   const int Shop_Temp_ID               =    2; // Shop Temp Child ID
+  const int Attic_Temp_ID              =    3; // Panel Pump Flow Child ID
   const int Tank_Pump_ID               =   10; // Panel Pump Child ID
   const int Tank_Pump_Pressure_ID      =   11; // Panel Pump Pressure Child ID
   const int Tank_Pump_Flow_ID          =   12; // Panel Pump Flow Child ID
-  const int Tank_Heater_ID             =   13; // Storage Tank Heater on/off
-  const int SHVAC_Fan_Pump_ID          =   14; // Solar HVAC Pump and Fan
-  const int Chiller_Pump_ID            =   15; // Swamp Cooler Water Pump
-  const int SHVAC_Set_Point_ID         =   32; // Pot to Control Shop Temp (controls HVAV Pump and Fan)
-    
-  const int Attic_Temp_ID              =   20; // Attic Temp Child ID
-  const int Attic_Fan_ID               =   21; // Attic Fan on/off
-  const int Attic_Louver_ID            =   22; // Attic Louver open/closed
-  const int Gable_Louver_ID            =   23; // Attic Louver open closed
-  const int Coulpa_Fan_Parent_ID       =   50; // Parent ID of Coupla Controller #1
-  const int Coulpa_Fan_Child_ID        =    1; // Child ID of the Fan in the Coupla #1
-
+  const int Attic_Fan_ID               =   13; // Attic Fan on/off
+  const int Attic_Louver_ID            =   14; // Attic Louver open/closed
+  const int Tank_Heater_ID             =   15; // Storage Tank Heater on/off
+  const int HVAC_Fan_Pump_ID           =   20; // Pump and Fan for HVAC
   const int General_Alarm_ID           =   30; // Alarms to Vera and Local Buzzer
   const int Test_Button_ID             =   31; // Test Button
+  const int HVAC_Set_Point_ID          =   32; // Pot to Control Shop Temp (controls HVAV Pump and Fan)  
   const int Moton_Sensor_ID            =   33; // Moton Sensor for Alarm 
 
-  const int SHeater_Parent_ID          =   21; // Parent ID of Supplemently Heater Controller #2
-  const int SHeater_Child_ID           =    1; // Child ID of Supplemantly Heater #2
-  const int SHeater_Set_Point_ID       =   32; // Supplemently Heater Thermostat Set Point
-
-  // #1, #2 Parent and Child ID's of Exturnal Controllers
-
-  
 // Set Current Sensor Readings to Zero or Not Found
   float TankTemp = -127.0;
   float currentTankTemp = -127.0;
@@ -118,29 +107,24 @@
   float tankPumpPressure = 0.0;
   float currentTankPumpPressure = 0.0;
   float hvacSetPoint = 0.0;
-  float systemDifference = 0.0;
-
-// **** Zero out variables used with LCD ****
+// Zero out variables used with LCD
   int intSolarPanelTemp = 0;
   int intTankTemp = 0;
   int intShopTemp = 0;  
   int intTankPumpPressure = 0;
   int intAtticTemp = 0;
 
-// **** Set Device Status as Off ****
-  bool tankPump           = false;
-  bool tank_Heater        = false;
-  bool attac_Fan          = false;
-  bool attic_Louver       = false;
-  bool atticFanStatus     = false;
-  bool atticLouverStatus  = false;
+// Set Device Status as Off
+  bool tankPump = false;
+  bool tank_Heater = false;
+  bool attac_Fan = false;
+  bool attic_Louver = false;
+  bool atticFanStatus = false;
+  bool atticLouverStatus = false;
   bool generalAlarmStatus = false;
-  bool hvacFanPumpStatus  = false;
-  bool motonSensorStatus  = false;
-  bool gableLouverStatus  = false;
-  bool couplaFanStatus    = false;
-  bool sHeaterStatus      = false; // Supplamently Heater on/off    
-
+  bool hvacFanPumpStatus = false;
+  bool motonSensorStatus = false;
+    
 // **** Hex Addresses of Dallas Temp Sensors ****
   DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x80, 0xEA, 0x29, 0x07, 0x00, 0x00, 0x0A};
   DeviceAddress Tank_Temp_Addr =        {0x28, 0x03, 0xA2, 0x29, 0x07, 0x00, 0x00, 0x6E};
@@ -164,9 +148,7 @@
   MyMessage msg_set_temp_pot_heat(HVAC_Set_Point_ID, V_HVAC_SETPOINT_HEAT);
   MyMessage msg_set_temp_pot_cool(HVAC_Set_Point_ID, V_HVAC_SETPOINT_COOL);
   MyMessage msg_moton_sensor(Moton_Sensor_ID, V_TRIPPED);
-  MyMessage msg_gable_louver(Gable_Louver_ID, V_STATUS);
-  MyMessage msg_coupla_fan(Coupla_Fan_ID, V_STATUS);
-  MyMessage msg_
+
   
 //************** Start of void before *****************
 void before() // Who Calls This ???????????
@@ -182,6 +164,7 @@ void before() // Who Calls This ???????????
   sensors.setResolution(Shop_Temp_Addr, tempResolution);
   sensors.setResolution(Attic_Temp_Addr, tempResolution);
 }
+// **** End of void before ****
 
 // **** 2 line LCD Stuff ****
   // Initialize display. Google the correct settings for your display. 
@@ -213,7 +196,7 @@ void setup()
   attachInterrupt(0, rpm, RISING); //and the interrupt is attached
 }
 
-// **** Start of setupPins ****
+// **** End of Void Setup ****
 void setupPins()
 {
 // Digital
@@ -235,7 +218,7 @@ void setupPins()
   pinMode(tank_Pump_Pressure_Pin, INPUT);  
   pinMode(Set_Temp_Pot_Pin, INPUT);
 }
-// Save For IC2 Display
+// For IC2 Display
 /*void setupLCD()
 {
 // LCD Setup
@@ -244,6 +227,7 @@ void setupPins()
   lcd.clear (); // go home on LCD
 }
 */
+// **** End of Void Setup ****
 
 // **** Start of Presentation ****
 void presentation() 
@@ -283,11 +267,6 @@ void presentation()
   present(Test_Button_ID, S_BINARY, "TestButton");             // Test Button Sets off the General Alarm
   delay(100);
   present(HVAC_Set_Point_ID, S_HEATER, "TempSetPoint"); 
-
-
-
-
-
 }
 // **** End Of Presentation ****
 
@@ -306,11 +285,11 @@ void loop()
   Serial.println(sensors.getDeviceCount());   
   Serial.print("Getting temperatures... ");  
   Serial.println();   
-
+    
   // **** Tell all Dallas Sensors to take their Temperature ****
   sensors.requestTemperatures();
- 
- // Zero Flow Counter and Enable Interrupts
+
+  // Zero Flow Counter and Enable Interrupts
   flowCounter = 0; //Set NbTops to 0 ready for calculations
   sei(); //Enables interrupts
   
@@ -325,39 +304,58 @@ void loop()
   Serial.print (tankPumpFlow, 2); //Prints the number calculated above
   Serial.print (" L/hour\r\n"); //Prints "L/hour" and returns a new line  
   
+  Serial.print("Solar Panel Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  Serial.print("Panel Temp=");
   PanelTemp =  printTemperature(sensors, Solar_Panel_Temp_Addr);
-  currentPanelTemp = tempF;
+  currentPanelTemp = PanelTemp;
+  Serial.print("Panel Temp=");
+  Serial.println(int(PanelTemp));
+  Serial.println();
+  // Send in the new Solar_Panel_Temp
+  send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(PanelTemp,1));
 
+  Serial.print("Storage Tank Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  Serial.print("Tank Temp=");
   TankTemp = printTemperature(sensors, Tank_Temp_Addr);
-  currentTankTemp = tempF;
+  currentTankTemp = TankTemp;
+  Serial.print("Tank Temp=");
+  Serial.println(int(TankTemp));  
+  Serial.println();
+  // Send in the new Tank_Temp
+  send(msg_tank_temp.setSensor(Tank_Temp_ID).set(TankTemp,1));
      
+  Serial.print("Shop Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  Serial.print("Shop Temp=");
   ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
-  currentShopTemp = tempF;
-  
+  currentShopTemp = ShopTemp;
+  Serial.print("Shop Temp=");
+  Serial.println(int(ShopTemp));
+  Serial.println();
+  // Send in the new Shop_Temp
+  send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
+
+  Serial.print("Attic Temperature is:   ");
   // Fetch Temperature for Attic by Sensor Address
-  Serial.print("Attic Temp=");
   AtticTemp = printTemperature(sensors, Attic_Temp_Addr);
-  currentAtticTemp = tempF;
+  Serial.println();
+  currentAtticTemp=AtticTemp;
+  // Send GW the new Attic_Temp
+  Serial.println(); 
+  send(msg_attic_temp.setSensor(Attic_Temp_ID).set(AtticTemp,1));
 
 // Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
   readTankPumpPressure(); // Get Tank Pump Pressure
   currentTankPumpPressure = tankPumpPressure;
+  send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure,1));
+  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlow,1)); 
   processTankPump();
-  processAtticFan();
-  writeLCD();  // Send results to LCD Dispaly and update MySenors GW 
+  writeLCD();  // Send results to LCD Dispaly 
   Test_Button ();
+  General_Alarm ();     // Test for General Alarm, Reset if false
 }
 //******************** End Of Void Loop ************************
 
-/*-----( Declare User-written Functions )-----*/
-
-// All Relays and LED's are Active LOW  ??? Not sure of this.
+// All Relays and LED's are Active LOW
 // Need to add tests for pressure and flow??????
 
 // **** Start of processTankPump ****
@@ -387,58 +385,20 @@ void processTankPump()
 }
 // **** End of processTankPump ****
 
-
-//*********** Stat of processAtticFan *************
-// All Relays and LED's are Active LOW ???? Not sure of this
-
-void processAtticFan(){
-  Serial.println("We made it to the processAtticFan");
-  float systemDifference = AtticTemp - ShopTemp;
-  if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){
-    digitalWrite(attic_Louver_Pin, attic_Louver_Open);  
-    atticLouverStatus = true;
-//    TRANSPORT_DEBUG(PSTR("Attic Louver: Opening!\n"));
-    //wait for Louver to open
-    delay(fanDelayMs);
-//    TRANSPORT_DEBUG(PSTR("Attic Louver: Open!\n"));
-//  Send GW New Status
-    digitalWrite(attic_Fan_Pin, attic_Fan_On);  
-    atticFanStatus = true;
-//    TRANSPORT_DEBUG(PSTR("Attic Fan: On!\n"));
-//  Send GW New Status
-	updateSystemStats();
-    return;
-  }
-  else if(systemDifference < systemDiffOff && atticFanStatus == true && atticLouverStatus == true){
-    digitalWrite(attic_Louver_Pin, attic_Louver_Closed);  
-    atticLouverStatus = false;
-//    TRANSPORT_DEBUG(PSTR("Attic Louver: Closing!\n"));
-    //wait for fan to stop 
-    delay(fanDelayMs);
-    digitalWrite(attic_Fan_Pin, attic_Fan_Off);  
-    atticFanStatus = false;
-//    TRANSPORT_DEBUG(PSTR("Attic Fan: Off!\n"));
-//  Send GW New Status
-	updateSystemStats();
-    return;
-  }
-}// ********** End processAtticFan ************
-
+/*-----( Declare User-written Functions )-----*/
 
 //******** Start of printTemperature ***********
 float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
-   tempF = sensors.getTempF(deviceAddress);
+   float tempF = sensors.getTempF(deviceAddress);
    if (tempF == -127.00) 
    {
    Serial.print("Error getting temperature  ");
-   generalAlarmStatus = true;
-   updateSystemStatus();
    } 
    else
    {
    Serial.print("F: ");
-   Serial.println(tempF);
+   Serial.print(tempF);
    return(tempF);
    }
 }
@@ -464,20 +424,6 @@ void readTankPumpPressure()
   
   // if pressure is <20 PSI shut pump off and set an alarm 
 }  
-
-void updateSystemStats ();
-{
-  send(msg_attic_louver.setSensor(Attic_Louver_ID).set(atticFanStatus));
-  send(msg_attic_fan.setSensor(Attic_Fan_ID).set(atticFanStatus));
-  send(msg_attic_temp.setSensor(Attic_Temp_ID).set(AtticTemp,1));
-  send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
-  Serial.println(int(ShopTemp));
-  send(msg_tank_temp.setSensor(Tank_Temp_ID).set(TankTemp,1));
-  send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(PanelTemp,1));
-  send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure,1));
-  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlow,1)); 
-  send(msg_general_alarm.setSensor(General_Alarm_ID).set(generalAlarmStatus,1)); 
-}
 
 //OUTPUT STUFFS
 void writeLCD()
@@ -511,10 +457,19 @@ void writeLCD()
   lcd.print(currentTankPumpFlow, 1);
 }
 
+void General_Alarm ()
+{
+  if (generalAlarmStatus == true) 
+
+
+
+}
+}
+
 void Test_Button ()
 {
-if (generalAlarmStatus == true) return ; // If True Return Because System is Already in Alarm
 // Test Button Will Set off Alarm
+  Serial.println("Start of Test Button");
   // read the state of the switch into a local variable:
   int reading = digitalRead(buttonPin);
   // check to see if you just pressed the button
@@ -536,10 +491,19 @@ if (generalAlarmStatus == true) return ; // If True Return Because System is Alr
 
       // only toggle the Alarm if the new button state is HIGH
       if (buttonState == HIGH) {
+      if (generalAlarmStatus == true)
+        { 
+          digitalWrite(general_Alarm_Pin, LOW);
+          generalAlarmStatus = false;
+          return ; // Turn off buzzer and return
+        } else
+        {
         generalAlarmStatus = true;      
         digitalWrite(general_Alarm_Pin, HIGH);
-		updateSystemStatus();
-      }
+        Serial.Println("Somebody Pressed the Button");
+        send(msg_general_alarm.setSensor(General_Alarm_ID).set(generalAlarmStatus,1));    
+        }
+      }      
     }
   }
   // save the reading.  Next time through the loop,
