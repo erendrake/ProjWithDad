@@ -206,11 +206,11 @@ float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
    } 
    else
    {
-   Serial.print("C: ");
-   Serial.print(tempC);
-   Serial.print(" F: ");
-   Serial.print(DallasTemperature::toFahrenheit(tempC));
-   return(tempC);
+   Serial.print("F: ");
+   Serial.print(tempF);
+//   Serial.print(" F: ");
+//   Serial.print(DallasTemperature::toFahrenheit(tempC));
+   return(tempF);
    }
 }// ***** End printTemperature ********
 

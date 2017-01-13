@@ -61,12 +61,12 @@ const char blarg = "hi buddy!";
 
 // Define Child ID's for MySensors GW
 #define Number_Child_IDs      6 // Number of Child ID's
-#define Panel_Temp            0 // Panel Temp Child ID
-#define Tank_Temp             1 // Tank Temp Child ID
-#define Shop_Temp             2 // Shop Temp Child ID
-#define Panel_Pump            3 // Panel Pump Child ID
-#define Panel_Pump_Pressure   4 // Panel Pump Pressure Child ID
-#define Panel_Pump_Flow       5 // Panel Pump Flow Child ID
+#define Panel_Temp_ID            0 // Panel Temp Child ID
+#define Tank_Temp_ID             1 // Tank Temp Child ID
+#define Shop_Temp_ID             2 // Shop Temp Child ID
+#define Panel_Pump_ID            3 // Panel Pump Child ID
+#define Tank_Pump_Pressure_ID   4  // Tank Pump Pressure Child ID
+#define Tank_Pump_Flow_ID       5  // Tank Pump Flow Child ID
 
 // OneWire  ds(tempBusPin);
 // DallasTemperature sensors(&ds);
@@ -75,7 +75,7 @@ const char blarg = "hi buddy!";
 float currentTankTemp = -127.0;
 float currentPanelTemp = -127.0;
 float currentShopTemp = -127.0;
-
+float pumpFlow =0.0;
 // 
 //  intPanelTemp = static_cast<int>(currentPanelTemp);
 //  intTankTemp = static_cast<int>(currentTankTemp);  
@@ -86,8 +86,8 @@ float currentShopTemp = -127.0;
   int intShopTemp = 0;  
   int intPumpPressure = 0;
 
-// Shop Pump Status as Off
-bool panelPumpStatus = false;
+// Tank Pump Status as Off
+bool tankPumpStatus = false;
 
 // 
 unsigned long SLEEP_TIME = 30000; // Sleep time between reads (in milliseconds)
@@ -101,20 +101,20 @@ bool receivedConfig = false;
 bool metric = true;
 // Initialize temperature message
 // MyMessage msg(0,V_TEMP);
-MySensor gw;
-MyMessage msg_panel_temp(Panel_Temp,V_TEMP);
-MyMessage msg_tank_temp(Tank_Temp,V_TEMP);
-MyMessage msg_shop_temp(Shop_Temp,V_TEMP);
-MyMessage msg_panel_pump(Panel_Pump,V_STATUS);
-MyMessage msg_panel_pump(Panel_Pump_Pressure,V_PRESSURE);
-MyMessage msg_flow(Pump_Flow,V_FLOW);
+//MySensor gw;
+MyMessage msg_panel_temp(Panel_Temp_ID,V_TEMP);
+MyMessage msg_tank_temp(Tank_Temp_ID,V_TEMP);
+MyMessage msg_shop_temp(Shop_Temp_ID,V_TEMP);
+MyMessage msg_tank_pump(Tank_Pump_ID,V_STATUS);
+MyMessage msg_tank_pump_pressure(Tank_Pump_Pressure_ID,V_PRESSURE);
+MyMessage msg_tank_pump_flow(Tank_Pump_Flow_ID,V_FLOW);
 /* #define Number_Child_IDs      6 // Number of Child ID's
 #define Panel_Temp            0 // Panel Temp Child ID
 #define Tank_Temp             1 // Tank Temp Child ID
 #define Shop_Temp             2 // Shop Temp Child ID
 #define Panel_Pump            3 // Panel Pump Child ID
 #define Panel_Pump_Pressure   4 // Panel Pump Pressure Child ID
-#define Panel_Pump_Flow       5 // Panel Pump Flow Child ID
+#define Panel_pumpFlow       5 // Panel Pump Flow Child ID
 */
 
 void before()
@@ -150,12 +150,12 @@ void presentation() {
     //  for (int i=0; i<numSensors && i<MAX_ATTACHED_DS18B20; i++) {   
     //     present(i, S_TEMP);}
 
-      present(Panel_Temp, S_TEMP);                // Panel Temp Child ID 0
-      present(Tank_Temp, S_TEMP);                 // Tank Temp Child ID 1
-      present(Shop_Temp, S_TEMP);                 // Shop Temp Child ID 2
-      present(Panel_Pump, S_PUMP);                // Panel Pump Child ID 3
-      present(Panel_Pump_Pressure, S_PRESSURE);   // Panel Pump Pressure Child ID 4
-      present(Panel_Pump_Flow, S_FLOW);           // Panel Pump Flow Child ID 6
+      present(Panel_Temp_ID, S_TEMP, "Panel Temp");                // Panel Temp Child ID 0
+      present(Tank_Temp_ID, S_TEMP, "Tank Temp");                 // Tank Temp Child ID 1
+      present(Shop_Temp_ID, S_TEMP, "Shop Temp");                 // Shop Temp Child ID 2
+      present(Tank_Pump_ID, S_PUMP, "Tank Pump Status");                // Panel Pump Child ID 3
+      present(Tank_Pump_Pressure_ID, S_PRESSURE, "Tank Pump Pressure");   // Panel Pump Pressure Child ID 4
+      present(Tank_Pump_Flow_ID, S_FLOW, "Tank Pump Flow");           // Panel Pump Flow Child ID 6
 }
 
 float getTempByIndex(int index){

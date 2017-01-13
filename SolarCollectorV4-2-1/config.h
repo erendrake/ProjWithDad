@@ -15,7 +15,7 @@ const int HVAC_Fan_Pump_Pin = 23;
 // #define Set_Temp_Pot_Pin = A14;
 
 // Attic Fan Pin
-const int attic_Fan_Pin = 24;
+const int attic_Fan_Pin = 27;
 
 // Attic Louver Pin
 const int attic_Louver_Pin = 25;
@@ -25,6 +25,9 @@ const int tank_Heater_Pin = 26;
 
 // Solar Panel Pump Pressure Sensor
 // #define tank_Pump_Pressure_Pin A15
+
+// Motion Sensor Pin 
+const int motion_Sensor_Pin = 8;
 
 // Solar Panel Pump Flow Sensor
 const int tank_Pump_Flow_Pin = 21;

@@ -15,7 +15,7 @@ const int HVAC_Fan_Pump_Pin = 23;
 // #define Set_Temp_Pot_Pin = A14;
 
 // Attic Fan Pin
-const int attic_Fan_Pin = 24;
+const int attic_Fan_Pin = 27;
 
 // Attic Louver Pin
 const int attic_Louver_Pin = 25;

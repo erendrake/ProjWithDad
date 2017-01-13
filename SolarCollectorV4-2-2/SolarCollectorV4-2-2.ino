@@ -1,5 +1,5 @@
 /**
-"SolarHeaterControllerV4", "1.2 RW/CW 12/30/16"
+"SolarHeaterControllerV4-2-2", "RW/CW 1/12/17"
  * Example sketch showing how to send in DS1820B OneWire temperature readings back to the controller
  * http://www.mysensors.org/build/temp
  */
@@ -19,16 +19,13 @@
   #include <DallasTemperature.h>
   #include <OneWire.h>
   #define COMPARE_TEMP 1 // Send temperature only if changed? 1 = Yes 0 = No
-  #define ONE_WIRE_BUS 22 // Pin where dallase sensors are connected 
+  #define ONE_WIRE_BUS 24 // Pin where dallase sensors are connected 
   #define MAX_ATTACHED_DS18B20 16
   #include "config.h"
   #include <LiquidCrystal.h> 
 //  #include <LCD.h>
 //  #include <LiquidCrystal_I2C.h>
-//  #define attic_Louver_Open LOW
-//  #define attic_Louver_Closed HIGH
-//  #define attic_Fan_On LOW
-//  #define attic_Fan_Off HIGH
+
   
 // Solar addons
 //Temperature Thresholds
@@ -38,7 +35,7 @@
   float systemDifference = - 20.0; 
 
 // Thermostat
-  const int Set_Temp_Pot_Pin = A14;
+  const int set_Temp_Pot_Pin = A4;
 
 // **** Timers ****
   const int minimumPumpOnSeconds = MINIMUM_PUMP_ON_SECONDS;
@@ -57,10 +54,28 @@
 // **** Flow Sensor Stuff **** 
   volatile int flowCounter; //measuring the rising edges of the signal
   const int flowSensorPin = 21; //The pin location of the sensor
+  int calc_lpm; // Liters Per Minute 
+  int calc_gpm; // Gallons Per Minute
 
+// Test/Reset Button  
   int buttonState;             // the current reading from the input pin
   int lastButtonState = LOW;   // the previous reading from the input pin
 
+//  General Alarm State
+  int errorState = 0;
+  int errorOverTemp = 1;
+  int errorTempGetFail = 2;
+  int errorLowTankPumpPressure = 3;
+  int errorHighTankPumpPressure = 4;
+  int errorLowTankPumpFlow = 5;
+  int errorHighTankPumpFlow =6;
+  int errorLowHVACPumpPressure = 7;
+  int errorHighHVACPumpPressure = 8;
+  int errorLowHVACPumpFlow = 9;
+  int errorHighHVACPumpFlow = 10;
+  int errorTestButton = 11;
+  String errorString = String("");
+  
 // **** Start OneWire and Dallas Temp ****
   OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
   DallasTemperature sensors(&oneWire); // Pass the oneWire reference to Dallas Temperature. 
@@ -71,7 +86,7 @@
 
 
 // Sensor Settings
-  const char blarg = "hi buddy!";
+//  const char blarg = "hi buddy!";
 
 // Define Child ID's for MySensors GW
   const int Number_Child_IDs           =   15; // Number of Child ID's
@@ -90,25 +105,28 @@
   const int General_Alarm_ID           =   30; // Alarms to Vera and Local Buzzer
   const int Test_Button_ID             =   31; // Test Button
   const int HVAC_Set_Point_ID          =   32; // Pot to Control Shop Temp (controls HVAV Pump and Fan)  
-  const int Moton_Sensor_ID            =   33; // Moton Sensor for Alarm 
+  const int Motion_Sensor_ID           =   33; // Moton Sensor for Alarm 
 
 // Set Current Sensor Readings to Zero or Not Found
-  float TankTemp = -127.0;
+  float tankTemp = -127.0;
   float currentTankTemp = -127.0;
-  float PanelTemp = -127.0;
+  float panelTemp = -127.0;
   float currentPanelTemp = -127.0;
-  float ShopTemp = -127.0;
+  float shopTemp = -127.0;
   float currentShopTemp = -127.0;
-  float AtticTemp = -127.0;
+  float atticTemp = -127.0;
   float currentAtticTemp = -127.0;
-  float currernTankPumpPressure = 0.0;           // variable to store the value read  
   float tankPumpFlow = 0.0;
-  float currentTankPumpFlow = 0.0;
+//  float currentTankPumpFlow = 0.0;
   float tankPumpPressure = 0.0;
   float currentTankPumpPressure = 0.0;
   float hvacSetPoint = 0.0;
+  float tankPumpFlowLPM = 0.0;
+  float tankPumpFlowGPM = 0.0;
+  float currentTankPumpFlowGPM = 0.0;
+    
 // Zero out variables used with LCD
-  int intSolarPanelTemp = 0;
+  int intPanelTemp = 0;
   int intTankTemp = 0;
   int intShopTemp = 0;  
   int intTankPumpPressure = 0;
@@ -116,7 +134,7 @@
 
 // Set Device Status as Off
   bool tankPump = false;
-  bool tank_Heater = false;
+  bool tankHeater = false;
   bool attac_Fan = false;
   bool attic_Louver = false;
   bool atticFanStatus = false;
@@ -124,12 +142,14 @@
   bool generalAlarmStatus = false;
   bool hvacFanPumpStatus = false;
   bool motonSensorStatus = false;
-    
+  bool tempGetFail = false;
+      
 // **** Hex Addresses of Dallas Temp Sensors ****
-  DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x80, 0xEA, 0x29, 0x07, 0x00, 0x00, 0x0A};
-  DeviceAddress Tank_Temp_Addr =        {0x28, 0x03, 0xA2, 0x29, 0x07, 0x00, 0x00, 0x6E};
-  DeviceAddress Shop_Temp_Addr =        {0x28, 0x37, 0x49, 0x29, 0x07, 0x00, 0x00, 0xF5};
-  DeviceAddress Attic_Temp_Addr =       {0x28, 0xD9, 0x5E, 0x29, 0x07, 0x00, 0x00, 0xE2};
+  DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
+  DeviceAddress Tank_Temp_Addr =        {0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD};
+  DeviceAddress Shop_Temp_Addr =        {0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49};
+  DeviceAddress Attic_Temp_Addr =       {0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E};
+
 /* 4 extra Temp Sensors 
  *  
     Device A Address: 2880EA290700000A
@@ -154,7 +174,7 @@
   MyMessage msg_HVAC_Fan_Pump(HVAC_Fan_Pump_ID, V_STATUS);
   MyMessage msg_set_temp_pot_heat(HVAC_Set_Point_ID, V_HVAC_SETPOINT_HEAT);
   MyMessage msg_set_temp_pot_cool(HVAC_Set_Point_ID, V_HVAC_SETPOINT_COOL);
-  MyMessage msg_moton_sensor(Moton_Sensor_ID, V_TRIPPED);
+  MyMessage msg_motion_sensor(Motion_Sensor_ID, V_TRIPPED);
 
   
 //************** Start of void before *****************
@@ -197,10 +217,14 @@ void setup()
   lcd.print("Hello, World");
   lcd.setCursor(0, 1);
   lcd.print("Hello, me");// Flow Sensor Setup
+
+// Test/Reset Button
   pinMode(buttonPin, INPUT);
+
 // Flow Sensor Setup
   pinMode(flowSensorPin, INPUT); //initializes digital pin 21 ON Mega as an input
   attachInterrupt(0, rpm, RISING); //and the interrupt is attached
+
 }
 
 // **** End of Void Setup ****
@@ -221,9 +245,10 @@ void setupPins()
   pinMode(general_Alarm_Pin, OUTPUT);
   digitalWrite(general_Alarm_Pin, LOW);  
   pinMode(buttonPin, INPUT);
+  pinMode(motion_Sensor_Pin, INPUT);
 // Analog
   pinMode(tank_Pump_Pressure_Pin, INPUT);  
-  pinMode(Set_Temp_Pot_Pin, INPUT);
+  pinMode(set_Temp_Pot_Pin, INPUT);
 }
 // For IC2 Display
 /*void setupLCD()
@@ -242,7 +267,7 @@ void presentation()
 //  TRANSPORT_DEBUG(PSTR("BLARG:P\n"));
 
 // Send the sketch version information to the gateway and Controller
-  sendSketchInfo("SolarHeaterControllerV4", "1.2 RW/CW 12/30/16");
+  sendSketchInfo("SolarHeaterControllerV4-2-2", "RW/CW 1/12/17");
 
 // Fetch the number of attached temperature sensors  
   numSensors = Number_Temp_Sensors;
@@ -274,6 +299,10 @@ void presentation()
   present(Test_Button_ID, S_BINARY, "TestButton");             // Test Button Sets off the General Alarm
   delay(100);
   present(HVAC_Set_Point_ID, S_HEATER, "TempSetPoint"); 
+  delay(100);
+  present(Motion_Sensor_ID, S_MOTION, "Motion Sensor");
+   
+
 }
 // **** End Of Presentation ****
 
@@ -299,66 +328,83 @@ void loop()
   // Zero Flow Counter and Enable Interrupts
   flowCounter = 0; //Set NbTops to 0 ready for calculations
   sei(); //Enables interrupts
-  
+ 
   delay(1000); // Wait 1 second for both Flow and Temp Conversion 
-
   // Disable Interrupts Get Count Over the Passed 1 sec and Compute Flow
   cli(); //Disable interrupts
-  tankPumpFlow = (flowCounter * 60 / 5.5); //(Pulse frequency x 60) / 5.5Q, = flow rate in L/hour
-  currentTankPumpFlow = (tankPumpFlow,2);
+  tankPumpFlowLPM = (float(flowCounter) * 60 / 5.5); //(Pulse frequency x 60) / 5.5Q, = flow rate in L/hour
+  tankPumpFlowGPM = (tankPumpFlowLPM * .26);
+  currentTankPumpFlowGPM = (tankPumpFlowGPM,2);
   Serial.println ();
-  Serial.print ("Tank Pump Flow= ");
-  Serial.print (tankPumpFlow, 2); //Prints the number calculated above
-  Serial.print (" L/hour\r\n"); //Prints "L/hour" and returns a new line  
+  Serial.print ("Flow Counter= ");
+  Serial.println (flowCounter);
+  Serial.print ("Tank Pump Flow LPM= ");
+  Serial.println (tankPumpFlowLPM, DEC); // prints the number calculated above
+  Serial.print ("Gallons Per Min= ");
+  Serial.println (currentTankPumpFlowGPM, DEC); 
+  Serial.println ("");
   
-  Serial.print("Solar Panel Temperature is:   ");
+  Serial.print("Solar Panel Temperature= ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  PanelTemp =  printTemperature(sensors, Solar_Panel_Temp_Addr);
-  currentPanelTemp = PanelTemp;
-  Serial.print("Panel Temp=");
-  Serial.println(int(PanelTemp));
-  Serial.println();
-  // Send in the new Solar_Panel_Temp
-  send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(PanelTemp,1));
-
+  if (tempGetFail = false)
+    {
+    panelTemp =  printTemperature(sensors, Solar_Panel_Temp_Addr);
+    currentPanelTemp = panelTemp;
+    Serial.print("Panel Temp=");
+    Serial.println(panelTemp, 1);
+    Serial.println();
+    // Send in the new Solar_Panel_Temp
+    send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(panelTemp,1));
+    }
+    
   Serial.print("Storage Tank Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  TankTemp = printTemperature(sensors, Tank_Temp_Addr);
-  currentTankTemp = TankTemp;
-  Serial.print("Tank Temp=");
-  Serial.println(int(TankTemp));  
-  Serial.println();
-  // Send in the new Tank_Temp
-  send(msg_tank_temp.setSensor(Tank_Temp_ID).set(TankTemp,1));
+  tankTemp = printTemperature(sensors, Tank_Temp_Addr);
+  if (tempGetFail = false)
+    {
+    currentTankTemp = tankTemp;
+    Serial.print("Tank Temp=");
+    Serial.println(tankTemp, 1);  
+    Serial.println();
+    // Send in the new Tank_Temp
+    send(msg_tank_temp.setSensor(Tank_Temp_ID).set(tankTemp,1));    
+    } 
      
   Serial.print("Shop Temperature is:   ");
   // Fetch Temperature for Solar Panel by Sensor Address
-  ShopTemp = printTemperature(sensors, Shop_Temp_Addr);
-  currentShopTemp = ShopTemp;
-  Serial.print("Shop Temp=");
-  Serial.println(int(ShopTemp));
-  Serial.println();
-  // Send in the new Shop_Temp
-  send(msg_shop_temp.setSensor(Shop_Temp_ID).set(ShopTemp,1));
-
+  shopTemp = printTemperature(sensors, Shop_Temp_Addr);
+  if (tempGetFail = false)
+    {
+    currentShopTemp = shopTemp;
+    Serial.print("Shop Temp=");
+    Serial.println(shopTemp, 1);
+    Serial.println();
+    // Send in the new Shop_Temp
+    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(shopTemp,1));
+    }
   Serial.print("Attic Temperature is:   ");
   // Fetch Temperature for Attic by Sensor Address
-  AtticTemp = printTemperature(sensors, Attic_Temp_Addr);
-  Serial.println();
-  currentAtticTemp=AtticTemp;
-  // Send GW the new Attic_Temp
-  Serial.println(); 
-  send(msg_attic_temp.setSensor(Attic_Temp_ID).set(AtticTemp,1));
-
+  atticTemp = printTemperature(sensors, Attic_Temp_Addr);
+  if (tempGetFail == false)
+    {
+    currentAtticTemp = atticTemp;
+    Serial.print("Attic Temp=");
+    Serial.println(atticTemp,1);
+    Serial.println();
+    // Send GW the new Attic_Temp
+    Serial.println(); 
+    send(msg_attic_temp.setSensor(Attic_Temp_ID).set(atticTemp,1));
+    }
+  
 // Go see if the panel pump needs to get turned on and if it is is there any water pressure and flow?
   readTankPumpPressure(); // Get Tank Pump Pressure
   currentTankPumpPressure = tankPumpPressure;
   send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure,1));
-  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlow,1)); 
+  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlowGPM,1)); 
   processTankPump();
   writeLCD();  // Send results to LCD Dispaly 
-//  Test_Button ();
-//  General_Alarm ();     // Test for General Alarm, Reset if false
+  Test_Button ();
+
 }
 //******************** End Of Void Loop ************************
 
@@ -394,13 +440,14 @@ void processTankPump()
 
 /*-----( Declare User-written Functions )-----*/
 
-//******** Start of printTemperature ***********
+//**** Start of printTemperature ****
 float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
    float tempF = sensors.getTempF(deviceAddress);
-   if (tempF == -127.00) 
+   if (tempF <= -50.00) 
    {
    Serial.print("Error getting temperature  ");
+   tempGetFail = true;
    } 
    else
    {
@@ -418,11 +465,12 @@ void readTankPumpPressure()
   int sensorValue = analogRead(tank_Pump_Pressure_Pin);    // read the input pin Value range 0-1023
   float voltage = sensorValue * (5.0/1023.0);
   Serial.print("Voltage= ");
-  Serial.println(int(voltage));
-  float pumpPressure = ((voltage-111)/7); // Should be in PSI
+  Serial.println(voltage, 1);
+  tankPumpPressure = ((voltage-111)/7); // Should be in PSI
+  currentTankPumpPressure = tankPumpPressure;
   Serial.print("Pump_Pressure= ");
-  Serial.print(float(pumpPressure));
-  Serial.println("PSI"); //  
+  Serial.print(tankPumpPressure, 1);
+  Serial.println(" PSI"); //  
 
 //  return pumpPressure;
   
@@ -438,40 +486,152 @@ void writeLCD()
   Serial.println ("We made it to writeLCD");
   // Convert sensor flots to int and display
   lcd.clear();
-//  lcd.setCursor (0,0); // go to start of 1st line
-//  lcd.print("                ");
-//  lcd.setCursor (0,1); // go to start of 1st line
-//  lcd.print("                ");
   lcd.setCursor (0,0); // go to start of 1st line
-  lcd.print("PT:");     
-  lcd.setCursor (3,0); // 
+  lcd.print("P");     
+  lcd.setCursor (1,0); // 
   lcd.print(int(currentPanelTemp));
-  lcd.setCursor (7,0); // 
-  lcd.print("TT:");
-  lcd.setCursor (10,0); // 
+
+  lcd.setCursor (4,0); // 
+  lcd.print("T");
+  lcd.setCursor (5,0); // 
   lcd.print(int(currentTankTemp));
-  lcd.setCursor (0,1); // 
-  lcd.print("ST:");
-  lcd.setCursor (3,1); // 
+
+  lcd.setCursor (8,0); // 
+  lcd.print("S");
+  lcd.setCursor (9,0); // 
   lcd.print(int(currentShopTemp));
-  lcd.setCursor (7,1); // 
-  lcd.print("PP:");
-  lcd.setCursor (10,1); // 
+
+  lcd.setCursor (12,0); // 
+  lcd.print("A");
+  lcd.setCursor (13,0); // 
+  lcd.print(int(currentShopTemp));
+  
+  lcd.setCursor (0,1); // 
+  lcd.print("PP");
+  lcd.setCursor (2,1); // 
   lcd.print(int(currentTankPumpPressure));  
-  lcd.setCursor (13,1);
+
+  lcd.setCursor (4,1);
   lcd.print ("F");
-  lcd.setCursor (14,1);
-  lcd.print(currentTankPumpFlow, 1);
+  lcd.setCursor (5,1);
+  lcd.print(currentTankPumpFlowGPM, 1);
 }
 
-void General_Alarm ()
+void processAlarm ()
 {
-//  if (generalAlarmStatus == true) 
-
-
-
-
+    if (errorState = 0)
+    {
+    Serial.println("No Probles Here");
+    return;
+    }
+// 
+    if (errorState = 1) 
+    {
+//    errorOverTemp
+    Serial.println("Storage Tank Over Heat");
+    String errorString = ("Over Temp");
+    alarm (errorString);    
+    return;  
+    }
+    else if (errorState = 2)
+    {
+//    errorTempGetFail
+    Serial.println("Failed to Get Temp Reading");
+    String errorString = ("Temp Read Error");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 3)
+    {
+//    errorLowTankPumpPressure
+    Serial.println("Low Tank Pump Pressure");
+    String errorString = ("Low Tank Pump Press");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 4)
+    {
+//    errorHighTankPumpPressure
+    Serial.println("High Tank Pump Pressure");
+    String errorString = ("Hi Tank Pump Press");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 5)
+    {
+//    errorLowTankPumpFlow  
+    Serial.println("Low Tank Pump Flow");
+    String errorString = ("Low Tank Pump Press");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 6)
+    {
+//    errorHighTankPumpFlow
+    Serial.println("High Tank Pump Flow");
+    String errorString = ("High Tank Pump Press");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 7)
+    {
+//    errorLowHVACPumpPressure
+    Serial.println("Low HVAC Pump Pressure");
+    String errorString = ("Low Tank Pump Press");
+    alarm (errorString);    
+    return;
+    }
+    else if (errorState = 8)
+    {
+//    errorHighHVACPumpPressure
+    Serial.println("High HVAC Pump Pressure");
+    String errorString = ("high Tank Pump Press");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 9) 
+    {
+//    errorLowHVACPumpFlow  
+    Serial.println("Low HVAC Pump Flow");
+    String errorString = ("Low HVAC Pump Press");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 10)
+    {
+//    errorHighHVACPumpFlow
+    Serial.println("High HVAC Pump Flow");
+    String errorString = ("High HVAC Pump Flow");
+    alarm (errorString);
+    return;
+    }
+    else if (errorState = 11)
+    {
+//    errorTestButton
+    Serial.println("Test Button Pressed");
+    String errorString = ("Test Button Pressed");
+    alarm (errorString);
+    return;
+    }
+    Serial.println("No Problems Here Boss");
+    errorState = 0;
 }
+//  General Alarm State
+/*  
+//  General Alarm State
+  int errorState = 0;
+  int errorOverTemp = 1;
+  int errorTempGetFail = 2;
+  int errorLowTankPumpPressure = 3;
+  int errorHighTankPumpPressure = 4;
+  int errorLowTankPumpFlow = 5;
+  int errorHighTankPumpFlow =6;
+  int errorLowHVACPumpPressure = 7;
+  int errorHighHVACPumpPressure = 8;
+  int errorLowHVACPumpFlow = 9;
+  int errorHighHVACPumpFlow = 10;
+  int errorTestButton = 11;
+  */
 
 void Test_Button ()
 {
@@ -484,37 +644,47 @@ void Test_Button ()
   // long enough since the last press to ignore any noise:
 
   // If the switch changed, due to noise or pressing:
-  if (reading != lastButtonState) {
+  if (reading != lastButtonState) 
+    {
     // reset the debouncing timer
     lastDebounceTime = millis();
-  }
-  if ((millis() - lastDebounceTime) > debounceDelay) {
+    }
+  if ((millis() - lastDebounceTime) > debounceDelay) 
+  {
     // whatever the reading is at, it's been there for longer
     // than the debounce delay, so take it as the actual current state:
 
     // if the button state has changed:
-    if (reading != buttonState) {
+    if (reading != buttonState) 
+    {
       buttonState = reading;
-
-      // only toggle the Alarm if the new button state is HIGH
-      if (buttonState == HIGH) {
-      if (generalAlarmStatus == true)
-        { 
-          digitalWrite(general_Alarm_Pin, LOW);
-          generalAlarmStatus = false;
-          return ; // Turn off buzzer and return
-        } else
-        {
-        generalAlarmStatus = true;      
-        digitalWrite(general_Alarm_Pin, HIGH);
-        Serial.println("Somebody Pressed the Button");
-        send(msg_general_alarm.setSensor(General_Alarm_ID).set(generalAlarmStatus,1));    
-        }
-      }      
+      if (buttonState == HIGH) 
+      { 
+      errorState = 11;      
+      alarm();
+      }
     }
-  }
   // save the reading.  Next time through the loop,
   // it'll be the lastButtonState:
   lastButtonState = reading;
+  }
 }
-//*********( THE END )***********
+String alarm(errorString)
+{
+      if (errorState = 0)  // Turn off buzzer and return
+        { 
+          digitalWrite(general_Alarm_Pin, LOW);
+//          generalAlarmStatus = false;
+          return ;
+        } 
+        else if (errorState >= 1)
+        {
+//          generalAlarmStatus = true;      
+          digitalWrite(general_Alarm_Pin, HIGH);
+          Serial.println("There is an Error Somewhere Fix It!");
+          send(msg_general_alarm.setSensor(General_Alarm_ID).set(errorString,1));    
+        }
+ }     
+    
+    
+ //*********( THE END )***********
