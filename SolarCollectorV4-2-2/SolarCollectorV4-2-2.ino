@@ -45,9 +45,10 @@ const int minimumFanOnMs = 60000;
 const int fanDelayMs = 10000;
 const int loopSleepTimerMs = 10000;
 const int buttonPin = A5;    // the number of the pushbutton pin
+const int setPoint = Set_Temp_Pot_Pin
 
-// **** Tank Pressure Sensor Pin ****
-const int tank_Pump_Pressure_Pin = A15;
+                     // **** Tank Pressure Sensor Pin ****
+                     const int tank_Pump_Pressure_Pin = A15;
 
 // **** Relay Pins ****
 const int tankPumpPin = TANK_PUMP_PIN;
@@ -88,6 +89,9 @@ bool metric = false;
 
 // Sensor Settings
 //  const char blarg = "hi buddy!";
+// HVAC Stuff Mostly to do with 2 Stage Swamp Cooler and Inside Heat Exchanger Pump and Fan
+
+
 
 // Define Child ID's for MySensors GW
 const int Number_Child_IDs           =   15; // Number of Child ID's
@@ -118,12 +122,11 @@ float currentShopTemp = -127.0;
 float atticTemp = -127.0;
 float currentAtticTemp = -127.0;
 float tankPumpFlow = 0.0;
-//  float currentTankPumpFlow = 0.0;
 float tankPumpPressure = 0.0;
 float currentTankPumpPressure = 0.0;
-float hvacSetPoint = 0.0;
 float tankPumpFlowLPM = 0.0;
 float tankPumpFlowGPM = 0.0;
+float currentTankPumpFlowLPM = 0.0;
 float currentTankPumpFlowGPM = 0.0;
 
 // Zero out variables used with LCD
@@ -323,6 +326,8 @@ void loop()
   Serial.print("Getting temperatures... ");
   Serial.println();
 
+  thermostatSetting();
+
   // **** Tell all Dallas Sensors to take their Temperature ****
   sensors.requestTemperatures();
 
@@ -402,7 +407,8 @@ void loop()
   currentTankPumpPressure = tankPumpPressure;
   send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure, 1));
   send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlowGPM, 1));
-  processTankPump();
+  processTankPump();        // Pump Water Through the Solar Panel
+  processHVACPumpFan();     // Pump Water Through the HVAC Heat Exchanger and Turn on the HVAC Fan
   writeLCD();  // Send results to LCD Dispaly
   Test_Button ();
   processAlarm();
@@ -437,6 +443,19 @@ void processTankPump()
 }
 // **** End of processTankPump ****
 
+void thermostatSetting()
+{
+  float rawSetPoint = 0.0;
+  potValue = set_Temp_Pot_Pin;
+  Serial.print("Pot Value=");
+  Serial.println(potValue);     // Can be Anything From 0-1023
+  hvacSetPoint = (float(potValue) * 0.039) + 40.0;
+  intHVACSetPoint = int(hvacSetPoint);
+  Serial.println();
+  Serial.print("Temp Set Point=");
+  Serial.println(intHVACSetPoint);
+  Serial.println();
+}
 /*-----( Declare User-written Functions )-----*/
 
 //**** Start of printTemperature ****

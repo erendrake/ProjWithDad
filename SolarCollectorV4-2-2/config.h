@@ -2,17 +2,17 @@
 #define SERIAL_BPS 115200
 
 //Temperature Thresholds
-#define SYSTEM_DIFF_ON 5  
+#define SYSTEM_DIFF_ON 1  
 #define SYSTEM_DIFF_OFF 0
 #define SYSTEM_OVERHEAT 160
 
 //Panel Pump
-const int TANK_PUMP_PIN =20;
+const int TANK_PUMP_PIN = 20;
 #define MINIMUM_PUMP_ON_SECONDS 120
 
 // Blower Fan and Pump Pin
 const int HVAC_Fan_Pump_Pin = 23;
-// #define Set_Temp_Pot_Pin = A14;
+const int Set_Temp_Pot_Pin = A14;
 
 // Attic Fan Pin
 const int attic_Fan_Pin = 27;
