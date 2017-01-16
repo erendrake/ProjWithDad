@@ -151,6 +151,7 @@ bool generalAlarmStatus = false;
 bool hvacFanPumpStatus = false;
 bool motonSensorStatus = false;
 bool tempGetFail = false;
+bool heating = false;
 
 // **** Hex Addresses of Dallas Temp Sensors ****
 DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
@@ -349,7 +350,6 @@ void loop()
   Serial.print("Solar Panel Temperature= ");
   // Fetch Temperature for Solar Panel by Sensor Address
   if (tempGetFail == false)
-  if 
   {
     panelTemp =  printTemperature(sensors, Solar_Panel_Temp_Addr);
     currentPanelTemp = panelTemp;
@@ -424,19 +424,22 @@ void processTankPump()
 {
   systemDifference = currentPanelTemp - currentTankTemp;
 
-  if (currentTankTemp > systemOverheat) {
+  if (currentTankTemp > systemOverheat) 
+  {
     Serial.println("System Over Temp and Panel Pump: Off!");
     digitalWrite(tankPumpPin, HIGH);
     tankPump = false;
     errorState = errorOverTemp;
     return;
   }
-  if (systemDifference > systemDiffOn && tankPump == false) {
+  if (systemDifference > systemDiffOn && tankPump == false) 
+  {
     digitalWrite(tankPumpPin, LOW);
     Serial.println("Tank Pump: On!");
     tankPump = true;
   }
-  else if (systemDifference < systemDiffOff && tankPump == true) {
+  else if (systemDifference < systemDiffOff && tankPump == true) 
+  {
     digitalWrite(tankPumpPin, HIGH);
     Serial.println("tankPump: Off!");
     tankPump = false;
@@ -447,32 +450,30 @@ void processTankPump()
 void processHVACPumpFan()
 {
   // See if We Need to and Can Turn on the HVAC Pump and Fan
-  if (((currentTankTemp + 3.0) >= hvacSetPoint) && (shopTemp <= (setPoint - 2.0))
+  if (((currentTankTemp + 3.0) >= hvacSetPoint) && (shopTemp <= (hvacSetPoint - 2.0)))
   {
-    digitalWrite(HVAC_Fan_Pump_Pin, LOW);           //  Turn on HVAC Pump and Fan if shopTemp <= setPoint - 2
+    digitalWrite(HVAC_Fan_Pump_Pin, LOW);           //  Turn on HVAC Pump and Fan if shopTemp <= hvacSetPoint - 2
     heating = true;
     Serial.println("Heater On");
   }
-  else if (shopTemp >= (setPoint + 2.0))
-    {
-      digitalWrite(HVAC_Fan_Pump_Pin, HIGH);          // Turn HVAC Pump and Fan if off if shopTemp >= setPoint + 2
-      heating = false;
-      Serial.println("Heater Off");
-    }
-  }    updateGW(); // Update GW and LCD
+  else if (shopTemp >= (hvacSetPoint + 2.0))
+  {
+    digitalWrite(HVAC_Fan_Pump_Pin, HIGH);          // Turn HVAC Pump and Fan if off if shopTemp >= hvacSetPoint + 2
+    heating = false;
+    Serial.println("Heater Off");
+  }
 }
 
 // **** Turn On Tank Heater if Shop Gets To Cold ****
 void  processTankHeater()
 {
 if ((currentTankTemp && shopTemp) < tankTempUnderTemp)            // Turn On Tank Heater If the W
-{
+  {
   digitalWrite(tank_Heater_Pin, LOW);
   Serial.println("Tank Heater Turned On");
-  alarmState 
-  else               
+  alarmState = errorTankUnderTemp;
+  }
 }
-
 // **** Get Thermostat Setting ****
 void thermostatSetting()
 {
