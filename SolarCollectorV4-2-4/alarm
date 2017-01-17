@@ -1,24 +1,5 @@
 // Alarm.h
 
-#ifndef alarm_h
-#define alarm_h
-#define LIBRARY_VERSION 1.0.0
-
-//  General Alarm State
-int errorState = 0;
-int errorOverTemp = 1;
-int errorTempGetFail = 2;
-int errorLowTankPumpPressure = 3;
-int errorHighTankPumpPressure = 4;
-int errorLowTankPumpFlow = 5;
-int errorHighTankPumpFlow = 6;
-int errorLowHVACPumpPressure = 7;
-int errorHighHVACPumpPressure = 8;
-int errorLowHVACPumpFlow = 9;
-int errorHighHVACPumpFlow = 10;
-int errorTankUnderTemp = 11;
-int errorTestButton = 12;
-
 void processAlarm ()
 {
   String errorString = String("");
@@ -162,6 +143,4 @@ void Test_Button ()             // Install a Switch To Turn Off Buzzer
   }
 }
 
-#endif
 
-//*********( THE END )***********

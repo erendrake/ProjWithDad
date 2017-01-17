@@ -1,9 +1,5 @@
 // HVACPumpFan
 
-#ifndef HVAC_Pump_h
-#define HVAC_Pump_h
-#define LIBRARY_VERSION 1.0.0
-
 // **** Start of Process HVAC Pump and Fan ****
 void processHVACPumpFan()
 {
@@ -21,4 +17,4 @@ void processHVACPumpFan()
     Serial.println("Heater Off");
   }
 }  
-#endif
+

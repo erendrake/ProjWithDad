@@ -1,13 +1,8 @@
 // My MySensors Stuff
 
-#inndef my_mysensors_h
-// #ifndef my_mysensors_h
-#define my_mysensors_h
-#define LIBRARY_VERSION 1.0.0
-#include <MySensors.h>
 
-//void define_child_ids()
-//{
+void define_child_ids()
+{
 // Define Child ID's for MySensors GW
 const int Number_Child_IDs           =   15; // Number of Child ID's
 const int Number_Temp_Sensors        =    4; // Panel Temp Child ID
@@ -26,10 +21,11 @@ const int General_Alarm_ID           =   30; // Alarms to Vera and Local Buzzer
 const int Test_Button_ID             =   31; // Test Button
 const int HVAC_Set_Point_ID          =   32; // Pot to Control Shop Temp (controls HVAV Pump and Fan)
 const int Motion_Sensor_ID           =   33; // Moton Sensor for Alarm
-//}
+}
+
 // **** Initialize sensor message to MySensors Gateway ****
-//void messages()
-//{
+void messages()
+{
 MyMessage msg_solar_panel_temp(Solar_Panel_Temp_ID, V_TEMP);
 MyMessage msg_tank_temp(Tank_Temp_ID, V_TEMP);
 MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
@@ -46,10 +42,10 @@ MyMessage msg_HVAC_Fan_Pump(HVAC_Fan_Pump_ID, V_STATUS);
 MyMessage msg_set_temp_pot_heat(HVAC_Set_Point_ID, V_HVAC_SETPOINT_HEAT);
 MyMessage msg_set_temp_pot_cool(HVAC_Set_Point_ID, V_HVAC_SETPOINT_COOL);
 MyMessage msg_motion_sensor(Motion_Sensor_ID, V_TRIPPED);
-//}
+}
 
-//void present_sensors()
-//{
+void present_sensors()
+{
 // Send the sketch version information to the gateway and Controller
   sendSketchInfo("SolarHeaterControllerV4-2-4", "RW/CW 1/16/17");
   // Fetch the number of attached temperature sensors
@@ -83,5 +79,5 @@ MyMessage msg_motion_sensor(Motion_Sensor_ID, V_TRIPPED);
   present(HVAC_Set_Point_ID, S_HEATER, "TempSetPoint");
   delay(100);
   present(Motion_Sensor_ID, S_MOTION, "Motion Sensor");
-//}
-#endif;
+}
+

@@ -1,5 +1,5 @@
 /**
-  "SolarHeaterControllerV4-2-4", "RW/CW 1/15/17"
+  "SolarHeaterControllerV4-2-5", "RW/CW 1/16/17"
    Example sketch showing how to send in DS1820B OneWire temperature readings back to the controller
    http://www.mysensors.org/build/temp
 */
@@ -128,13 +128,11 @@ void setup()
 //  define_child_ids();
 //  messages();
 //  present_sensors();
-  
-
 
 // **** Start of Presentation ****
 void presentation()
 {
-  sendSketchInfo("SolarHeaterControllerV4-2-4", "RW/CW 1/16/17");
+  sendSketchInfo("SolarHeaterControllerV4-2-5", "RW/CW 1/16/17");
   // Fetch the number of attached temperature sensors
   numSensors = Number_Temp_Sensors;
   // Present all sensors to controller
