@@ -1,5 +1,5 @@
 /**
-  "SolarHeaterControllerV4-2-5", "RW/CW 1/16/17"
+  "SolarHeaterControllerV4-2-6", "RW/CW 1/19/17"
    Example sketch showing how to send in DS1820B OneWire temperature readings back to the controller
    http://www.mysensors.org/build/temp
 */
@@ -132,7 +132,7 @@ void setup()
 // **** Start of Presentation ****
 void presentation()
 {
-  sendSketchInfo("SolarHeaterControllerV4-2-5", "RW/CW 1/16/17");
+  sendSketchInfo("SolarHeaterControllerV4-2-6", "RW/CW 1/19/17");
   // Fetch the number of attached temperature sensors
   numSensors = Number_Temp_Sensors;
   // Present all sensors to controller
@@ -273,39 +273,5 @@ void loop()
 // **** End Of Void Loop ****
 
 /*-----( Declare User-written Functions )-----*/
-
-
-
-
-
-
-
-
-
-// **** Turn On Tank Heater if Shop Gets To Cold ****
-void  processTankHeater()
-{
-  if ((currentTankTemp && shopTemp) < tankTempUnderTemp)            // Turn On Tank Heater If the W
-  {
-    digitalWrite(tank_Heater_Pin, LOW);
-    Serial.println("Tank Heater Turned On");
-//    alarmState
-//    else
-    }
-}
-
-
-
-// Alarm.h
-
-
-
-
-
-
-
-
-
-
 
 // **** ( THE END ) ****
