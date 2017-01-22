@@ -41,10 +41,10 @@ void processTankPump()
 void readTankPumpPressure()
 {
   // if after flow startup timer has expired and the flow is still to low add something Here!
-  int sensorValue = analogRead(tank_Pump_Pressure_Pin);    // read the input pin Value range 0-1023
-  float voltage = sensorValue * (5.0 / 1023.0);
+  float rawSensorValue = analogRead(tank_Pump_Pressure_Pin);    // Read Pin A15 Value range 0-1023
+  float voltage = rawSensorValue * (5.0 / 1023.0);
   Serial.print("Raw Pressure Value= ");
-  Serial.println(sensorValue);
+  Serial.println(rawSensorValue, 1);
   Serial.print("Voltage= ");
   Serial.println(voltage, 1);
   tankPumpPressure = ((voltage - 111) / 7); // Should be in PSI
@@ -52,10 +52,27 @@ void readTankPumpPressure()
   Serial.print("Pump_Pressure= ");
   Serial.print(tankPumpPressure, 1);
   Serial.println(" PSI"); //
-
-  //  return pumpPressure;
-
+  Serial.println ();
+  send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure, 1));
+  // Add Later
   // If Pressure has changed send in the the new Pump Pressure
   //    send(msg.setSensor(numSensors+2).set(pumpPressure,1));
   // if pressure is <?? PSI shut pump off and set an alarm
+}
+
+// **** Tank Pump Flow ****
+void readTankPumpFlow ()
+{
+  Serial.print("Flow Counter=");
+  Serial.println(flowCounter);
+  Serial.println ();
+  tankPumpFlowLPM = (float(flowCounter) * 60 / 5.5); //(Pulse frequency x 60) / 5.5Q, = flow rate in L/hour
+  tankPumpFlowGPM = (tankPumpFlowLPM * .26);
+  currentTankPumpFlowGPM = (tankPumpFlowGPM, 2);
+  Serial.print ("Tank Pump Flow LPM= ");
+  Serial.println (tankPumpFlowLPM, DEC);      // prints the number calculated above
+  Serial.print ("Gallons Per Min= ");
+  Serial.println (currentTankPumpFlowGPM, DEC);
+  Serial.println ();
+  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlowGPM, 1));  
 }
