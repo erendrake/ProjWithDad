@@ -95,5 +95,6 @@ void alarm(String errorString)
     digitalWrite(general_Alarm_Pin, HIGH);
     Serial.println("There is an Error Somewhere Fix It!");
     //   send(msg_general_alarm.setSensor(General_Alarm_ID).set(errorString, 1));
+  wait(500);
   }
 }

@@ -119,7 +119,7 @@ void setup()
   lcd.setCursor(0, 1);
   lcd.print("Hello, me");
   // Flow Sensor Setup
-  attachInterrupt(0, rpm, RISING);            //and the interrupt is attached
+  attachInterrupt(2, rpm, RISING);                        // The Interrupt is Attached to Mega Pin Pin 21 Interrupt 2 
 }
 
 // **** Start of Presentation ****
@@ -185,7 +185,7 @@ void loop()
   flowCounter = 0; //Set NbTops to 0 ready for calculations
   sei(); //Enables Interrupts If Water is Running Start Counting
 
-  delay(1000);                                // Wait 1 second for both Flow and Temp Conversion
+  wait(1000);                                // Wait 1 second for both Flow and Temp Conversion. Wait is Non Blocking According to MySensors
 
   cli();              // Disable Interrupts Stop Counting and Get Count Over the Passed 1 sec and Compute Flow
 
@@ -200,6 +200,7 @@ void loop()
     // Send in the new Solar_Panel_Temp
     send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(panelTemp, 1));
     Serial.println ("");
+  wait(500);
   }
 
   // Tank
@@ -211,6 +212,7 @@ void loop()
     // Send in the new Tank_Temp
     send(msg_tank_temp.setSensor(Tank_Temp_ID).set(tankTemp, 1));
     Serial.println ("");
+    wait(500);
   }
 
   // Shop
@@ -222,6 +224,7 @@ void loop()
     // Send in the new Shop_Temp
     send(msg_shop_temp.setSensor(Shop_Temp_ID).set(shopTemp, 1));
     Serial.println ("");
+    wait(500);
   }
 
   // Attic
@@ -236,6 +239,7 @@ void loop()
     // Send GW the new Attic_Temp
     send(msg_attic_temp.setSensor(Attic_Temp_ID).set(atticTemp, 1));
     Serial.println ("");
+    wait(500);
   }
   else
   {
@@ -255,7 +259,7 @@ void loop()
   writeLCD();                                 // Send results to LCD Dispaly
   Test_Button ();
   processAlarm();
-  delay(50000);
+  wait(30000);
   // Go Do It All Again
 }
 

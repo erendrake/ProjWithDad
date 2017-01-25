@@ -50,13 +50,14 @@ void readTankPumpPressure()
   Serial.println(rawSensorValue, 1);
   Serial.print("Voltage= ");
   Serial.println(voltage, 1);
-  tankPumpPressure = ((voltage - 111) / 7); // Should be in PSI
+  tankPumpPressure = ((rawSensorValue - 110) / 7); // Should be in PSI
   currentTankPumpPressure = tankPumpPressure;
   Serial.print("Pump_Pressure= ");
   Serial.print(tankPumpPressure, 1);
   Serial.println(" PSI"); //
   Serial.println ("");
   send(msg_tank_pump_pressure.setSensor(Tank_Pump_Pressure_ID).set(currentTankPumpPressure, 1));
+  wait(500);
   // Add Later
   // If Pressure has changed send in the the new Pump Pressure
   //    send(msg.setSensor(numSensors+2).set(pumpPressure,1));
@@ -70,11 +71,12 @@ void readTankPumpFlow ()
   Serial.println(flowCounter);
   tankPumpFlowLPM = (float(flowCounter) * 60 / 5.5); //(Pulse frequency x 60) / 5.5Q, = flow rate in L/hour
   tankPumpFlowGPM = (tankPumpFlowLPM * .26);
-  currentTankPumpFlowGPM = (tankPumpFlowGPM, 2);
+  currentTankPumpFlowGPM = (tankPumpFlowGPM);
   Serial.print ("Tank Pump Flow LPM= ");
-  Serial.println (tankPumpFlowLPM, DEC);      // prints the number calculated above
+  Serial.println (tankPumpFlowLPM, 1);      // prints the number calculated above
   Serial.print ("Gallons Per Min= ");
-  Serial.println (currentTankPumpFlowGPM, DEC);
+  Serial.println (tankPumpFlowGPM, 1);
   Serial.println ("");
-  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlowGPM, 1));  
+  send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlowGPM, 1));
+  wait(500);  
 }

@@ -5,8 +5,9 @@ void processAtticFan(){
     digitalWrite(attic_Louver_Pin, attic_Louver_Open);                    //  Open Attic Louvers   
     atticLouverStatus = true;
     //wait for Louver to open
-    delay(atticFanDelayMs);
+    wait(atticFanDelayMs);
     send(msg_attic_louver.setSensor(Attic_Louver_ID).set(1));             //  Send GW New Status
+    wait(500);
     digitalWrite(attic_Fan_Pin, attic_Fan_On);                            // Turn On Attic Fan  
     atticFanStatus = true;
     send(msg_attic_fan.setSensor(Attic_Fan_ID).set(1));                   //  Send GW New Status
@@ -17,10 +18,11 @@ void processAtticFan(){
     atticFanStatus = false;
     send(msg_attic_fan.setSensor(Attic_Fan_ID).set(0));                   //  Send GW New Status
     //wait for fan to stop 
-    delay(atticFanDelayMs);    
+    wait(atticFanDelayMs);    
     digitalWrite(attic_Louver_Pin, attic_Louver_Closed);                  //  Close Attic Louvers  
     atticLouverStatus = false;
     send(msg_attic_louver.setSensor(Attic_Louver_ID).set(0));             //  Send GW New Status 
+    wait(500);
     return;
   }
 }

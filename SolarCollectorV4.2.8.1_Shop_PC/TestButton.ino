@@ -2,7 +2,7 @@
 void Test_Button ()             // Install a Switch To Turn Off Buzzer
 {
   // unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-  // unsigned long debounceDelay = 50;
+  // unsigned long debouncedelay = 50;
   // unsigned long interval=1000; // the time we need to wait
   // unsigned long previousMillis=0; // millis() returns an unsigned long.
   // Test Button Will Set off Alarm
