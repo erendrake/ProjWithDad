@@ -14,4 +14,3 @@ void  processTankHeater()
     // reset alarm state
   }
 }
-// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 

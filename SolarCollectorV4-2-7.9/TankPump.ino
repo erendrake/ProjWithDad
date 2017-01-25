@@ -79,4 +79,3 @@ void readTankPumpFlow ()
   Serial.println ("");
   send(msg_tank_pump_flow.setSensor(Tank_Pump_Flow_ID).set(currentTankPumpFlowGPM, 1));  
 }
-// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 

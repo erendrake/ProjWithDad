@@ -17,4 +17,3 @@ float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
       return (tempF);
     }
 }
-// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 

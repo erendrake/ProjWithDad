@@ -31,7 +31,7 @@
 // Enable and select radio type attached
 #define MY_RADIO_NRF24
 
-#define MY_NODE_ID 3
+#define MY_NODE_ID 4
 #include "config.h"
 // Enabled repeater feature for this node
 // #define MY_REPEATER_FEATURE

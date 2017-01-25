@@ -1,4 +1,3 @@
-// Attic Fan and Louver
 void processAtticFan(){
   Serial.println("We made it to the processAtticFan");
   float systemDifference = atticTemp - shopTemp;
@@ -25,4 +24,3 @@ void processAtticFan(){
     return;
   }
 }
-// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 

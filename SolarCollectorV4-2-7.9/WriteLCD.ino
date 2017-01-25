@@ -35,5 +35,4 @@ void writeLCD()
   lcd.setCursor (8, 1);
   lcd.print(currentTankPumpFlowGPM, 1);
 }
-// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 
 
