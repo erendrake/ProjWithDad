@@ -2,9 +2,10 @@
 //#define SERIAL_BPS 115200
 
 //Temperature Thresholds
-#define SYSTEM_DIFF_ON 1  
-#define SYSTEM_DIFF_OFF 0
+float SYSTEM_DIFF_ON = 1.0;  
+float SYSTEM_DIFF_OFF = 0.0;
 float SYSTEM_OVERHEAT = 190.0;
+
 // Define Sensors and Controllers
 const byte TEMP_BUS_PIN = 22;
 #define TEMP_POLLING_DELAY_SECONDS 3
@@ -23,9 +24,9 @@ int buttonState;                              // the current reading from the in
 int lastButtonState = LOW;                    // the previous reading from the input pin
 
 //Temperature Thresholds
-const int systemDiffOn = SYSTEM_DIFF_ON;
-const int systemDiffOff = SYSTEM_DIFF_OFF;
-const int systemOverheat = SYSTEM_OVERHEAT;
+systemDiffOn = SYSTEM_DIFF_ON;                // 1°
+systemDiffOff = SYSTEM_DIFF_OFF;              // 0°
+systemOverheat = SYSTEM_OVERHEAT;             // OverTemp Tank Temp >= 190°
 float systemDifference = - 20.0;
 
 // Other Nodes Parent and Child ID's
@@ -33,14 +34,15 @@ const byte shopSupHeaterParentID = 6;       // Parent Id of Heater Node
 const byte shopSupHeaterChildID = 1;        // This is the Heater (Child) ID
 
 // **** Timers ****
-unsigned long minimumPumpOnMilliSec = 120000;// MINIMUM_PUMP_ON_SECONDS = 120 2 Minutes or 120000 Milli Seconds
+unsigned long minPumpOnMilliSec = 120000;
 unsigned long tempPollingDelay = TEMP_POLLING_DELAY_SECONDS;
 unsigned long minimumFanOnMs = 60000;
 unsigned long atticFanDelayMs = 10000;
 unsigned long loopSleepTimerMs = 10000;
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
-
+unsigned long pumpOnTime = 0;               // Used for Minute Min Pump On Time
+unsigned long currentPumpOnTime = 0; 
 // Radio Pin Assingments for Arduino Mega Defined in Main Sketch 
 // Pin Name - Pin Number - Wire Color
 // CE PIN =     D40         Orange       
@@ -52,32 +54,32 @@ unsigned long currentMillis = 0;
 // GND      = SupHeader GND Black    
 // **** Pin Assingments for Arduino Mega ****
 // Digital
-const byte motion_Sensor_Pin = 8;// Motion Sensor Pin
-const byte general_Alarm_Pin= 9;
-const byte tankPumpPin = 20;// Solar Panel Pump Pressure Sensor
-const byte flowSensorPin = 21; 
-// ONE_WIRE_BUS = 24;     
-const byte HVAC_Fan_Pump_Pin = 23;// HVAC Blower Fan and Pump Pin
-const byte attic_Louver_Pin = 25;// Attic Louver Pin
-const byte tank_Heater_Pin = 26;// Storage Tank Heater Pin 
-const byte attic_Fan_Pin = 27;// Attic Fan Pin
-const byte run_Time_Pin= 27;//Diagnostic LED
-const byte set_Temp_Pot_Pin = A4; // Analog Pin for Thermostat Pot
-const byte buttonPin = A5;         // the number of the pushbutton pin// Pin For Test Alarm, Turn Off Alarm etc.
-const byte Set_Temp_Pot_Pin = A14;
-const byte tank_Pump_Pressure_Pin = A15;// #define tank_Pump_Pressure_Pin A15
-
+const byte motion_Sensor_Pin = 8;                 // Motion Sensor Pin 
+const byte general_Alarm_Pin= 9;                  // Alarm Buzzer
+const byte tankPumpPin = 20;                      // * Tank Pump Pin
+const byte flowSensorPin = 21;                    // * Tank Pump Flow Sensor Pin Interrupt # 2 on Mega
+const byte HVAC_Fan_Pump_Pin = 23;                // * HVAC Blower Fan and Pump Pin
+// ONE_WIRE_BUS = 24;                             // * Dallas Temp Sensors Pin Defined in Main Sketch
+const byte attic_Louver_Pin = 25;                 // * Attic Louver Pin
+const byte tank_Heater_Pin = 26;                  // * Storage Tank Heater Pin
+const byte attic_Fan_Pin = 27;                    // * Attic Fan Pin
+const byte summerWinterModePin = 17;              // * Summer/Winter Mode Switch
+// Analog
+const byte set_Temp_Pot_Pin = A4;                 // Analog Pin for Thermostat Pot
+const byte buttonPin = 28;                        // the number of the pushbutton pin
+const byte tank_Pump_Pressure_Pin = A15;          // Tank Pressure Sensor Pin
+const byte interruptLED = A5;
 
 // Interrupt Test LED
 
 
 // **** Flow Sensor Stuff ****
-volatile int flowCounter;                     //measuring the rising edges of the signal
-float calc_lpm;                                 // Liters Per Minute
+volatile int flowCounter;                         //measuring the rising edges of the signal
+float calc_lpm;                                   // Liters Per Minute
 float calc_gpm; 
 
 // Suplamental Heater Sturr
-byte summerWinterMode = 1;                        // Summer = 0, Winter = 1 Default to Winter 
+byte summerWinterMode = 1;                        // Summer = 0, Winter = 1 Default to Winter                      
 
 // Attic Fan Delay
 const int fanDelayMs = 10000;
@@ -85,7 +87,7 @@ const int fanDelayMs = 10000;
 #define attic_Louver_Closed HIGH
 #define attic_Fan_On LOW
 #define attic_Fan_Off HIGH
-
+ 
 // the following variables are long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
 long lastDebounceTime = 0;                    // the last time the output pin was toggled
@@ -111,6 +113,8 @@ float tankTemp = -127.0;
 float currentTankTemp = -127.0;
 float panelTemp = -127.0;
 float currentPanelTemp = -127.0;
+float lowerInletTemp = -127.0;
+float currentLowerInletTemp = -127.0;
 float shopTemp = -127.0;
 float currentShopTemp = -127.0;
 float atticTemp = -127.0;
@@ -118,10 +122,10 @@ float currentAtticTemp = -127.0;
 float tankPumpFlow = 0.0;
 float tankPumpPressure = 0.0;
 float currentTankPumpPressure = 0.0;
-float tankPumpFlowLPM = 0.0;
-float tankPumpFlowGPM = 0.0;
-float currentTankPumpFlowLPM = 0.0;
-float currentTankPumpFlowGPM = 0.0;
+float tankPumpFlowLPM = 0.0;                  // Tank Pump Flow in LPM
+float tankPumpFlowGPM = 0.0;                  // Tank Pump Flow in GPM
+float currentTankPumpFlowLPM = 0.0;           // Tank Pump Flow in LPM
+float currentTankPumpFlowGPM = 0.0;           // Tank Pump Flow in GPM
 float hvacSetPoint = 0.0;                     // Float Value of Thermostate Setting
 float tempF = 0.0;
 float tankTempUnderTemp = 40.0;               // Tank Under Temp 
@@ -149,13 +153,15 @@ bool tempGetFail = false;
 bool heating = false;
 bool supHeating = false;
 
-
 // **** Hex Addresses of Dallas Temp Sensors ****
-DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E};
+DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
 DeviceAddress Tank_Temp_Addr =        {0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD};
 DeviceAddress Shop_Temp_Addr =        {0x28, 0xB8, 0x3D, 0x29, 0x07, 0x00, 0x00, 0x49};
-DeviceAddress Attic_Temp_Addr =       {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
+DeviceAddress Attic_Temp_Addr =       {0x28, 0x9B, 0x44, 0x1D, 0x07, 0x00, 0x00, 0x7E};
+DeviceAddress Lower_Inlet_Temp_Addr = {0x28, 0x37, 0x49, 0x29, 0x07, 0x00, 0x00, 0xF5};
 
+
+// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 
 /* 4 extra Temp Sensors
 Device Address: 2830122907000095 Temp C: 7.50 Temp F: 45.50
 Device Address: 28B83D2907000049 Temp C: 19.50 Temp F: 67.10
@@ -181,7 +187,7 @@ float systemDifference = - 20.0;
 
 /*
 // **** Timers ****
-const int minimumPumpOnMilliSec = (MINIMUM_PUMP_ON_SECONDS * 1000);
+const int minPumpOnMilliSec = (MINIMUM_PUMP_ON_SECONDS * 1000);
 const int tempPollingDelay = TEMP_POLLING_DELAY_SECONDS;
 const int minimumFanOnMs = 60000;
 const int fanDelayMs = 10000;

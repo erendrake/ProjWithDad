@@ -1,12 +1,11 @@
 // **** Start of processTankPump ****
 void processTankPump()
 {
-  unsigned long currentMillis = millis();    // minimumPumpOnMilliSec 120000
-  // #define MINIMUM_PUMP_ON_SECONDS 120
-  // unsigned long interval = minimumPumpOnMilliSec; // the time we need to wait
-  // unsigned long previousMillis=0; // millis() returns an unsigned long.
+  // minTankPumpOnSeconds = 120
+  // const int systemDiffOn = SYSTEM_DIFF_ON;             // 1°
+  // const int systemDiffOff = SYSTEM_DIFF_OFF;           // 0°
+  // const int systemOverheat = SYSTEM_OVERHEAT;          // Tank Temp >= 190°
   systemDifference = currentPanelTemp - currentTankTemp;
-  // minimumPumpOnSeconds = 120
   Serial.print("CurrentTankTemp");
   Serial.println(currentTankTemp, 1);
   Serial.print("System Over Temp=");
@@ -19,26 +18,24 @@ void processTankPump()
     errorState = errorOverTemp;
     return;
   }
-  if (systemDifference > systemDiffOn && tankPump == false)
+  if ((systemDifference > systemDiffOn) && (currentLowerInletTemp >= 40.0) && tankPump == false)
   {
     digitalWrite(tankPumpPin, LOW);
+    pumpOnTime = millis();                                // Start the 2 Min Clock
     Serial.println("Tank Pump: On!");
     tankPump = true;
-    // Start the 2 min. Clock
-    unsigned long currentMillis = millis();
   }
   // Check to See if the 2 min. Clock has Run Out
-
-  else if (tankPump == true && ((unsigned long)(currentMillis - previousMillis) >= minimumPumpOnMilliSec))
+  currentPumpOnTime = millis() - pumpOnTime;              // Compute How Long the Pump Has Been Running
+  // If the 2 Min Clock Has Run Out and the Solar Panel Temp Has Dropped Below or = to the Tank Temp Turn Off the Pump
+  else if (tankPump == true && ((currentPumpOnTime >= minPumpOnTime) && (systemDifference <= systemDiffOff);
   {
-    if (systemDifference < systemDiffOff && tankPump)
-    {
       digitalWrite(tankPumpPin, HIGH);
       Serial.println("tankPump: Off!");
       tankPump = false;
-    }
   }
 }
+
 // **** Read Tank Pump Pressure ****
 // Read Pump Pressure Sensor, Check to see if it's changed
 void readTankPumpPressure()

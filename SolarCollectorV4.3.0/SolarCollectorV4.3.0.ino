@@ -1,9 +1,9 @@
 /**
-  "SolarHeaterControllerV4.2.9", "RW/CW 1/24/17"
+  "SolarHeaterControllerV4.3.0", "RW/CW 1/29/17"
    Example sketch showing how to send in DS1820B OneWire temperature readings back to the controller
    http://www.mysensors.org/build/temp
 */
-// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 
+// "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega
 // Running on Mega 1280
 // Enable debug prints to serial monitor
 #define MY_DEBUG
@@ -45,15 +45,16 @@ void before() // Who Calls This ???????????
 }
 
 // **** Initialize 2 Line Display ****
-LiquidCrystal lcd(10, 11, 12, 13, A0, A1, A2);// Plugged Into Uno Style Sensor Board          
+LiquidCrystal lcd(10, 11, 12, 13, A0, A1, A2);// Plugged Into Uno Style Sensor Board
 
 // Define Child ID's for MySensors GW
-const byte Number_Child_IDs           =   16; // Number of Child ID's
-const byte Number_Temp_Sensors        =    4; // Panel Temp Child ID
+const byte Number_Child_IDs           =   17; // Number of Child ID's
+const byte Number_Temp_Sensors        =    5; // Panel Temp Child ID
 const byte Solar_Panel_Temp_ID        =    0; // Panel Temp Child ID
 const byte Tank_Temp_ID               =    1; // Tank Temp Child ID
 const byte Shop_Temp_ID               =    2; // Shop Temp Child ID
 const byte Attic_Temp_ID              =    3; // Panel Pump Flow Child ID
+const byte Lower_Panel_Inlet_Temp_ID  =    4; // Solar Panel Lower Inlet Temp Sensor
 const byte Tank_Pump_ID               =   10; // Panel Pump Child ID
 const byte Tank_Pump_Pressure_ID      =   11; // Panel Pump Pressure Child ID
 const byte Tank_Pump_Flow_ID          =   12; // Panel Pump Flow Child ID
@@ -73,6 +74,7 @@ MyMessage msg_solar_panel_temp(Solar_Panel_Temp_ID, V_TEMP);
 MyMessage msg_tank_temp(Tank_Temp_ID, V_TEMP);
 MyMessage msg_shop_temp(Shop_Temp_ID, V_TEMP);
 MyMessage msg_attic_temp(Attic_Temp_ID , V_TEMP);
+MyMessage msg_lower_inlet_temp(Lower_Panel_Inlet_Temp_ID, V_TEMP);
 MyMessage msg_tank_pump(Tank_Pump_ID, V_STATUS);
 MyMessage msg_tank_heater(Tank_Heater_ID, V_STATUS);
 MyMessage msg_tank_pump_pressure(Tank_Pump_Pressure_ID, V_PRESSURE);
@@ -107,7 +109,7 @@ void setup()
 // **** Start of Presentation ****
 void presentation()
 {
-  sendSketchInfo("SolarHeaterControllerV4.2.9", "RW/CW 1/24/17");
+  sendSketchInfo("SolarHeaterControllerV4.3.0", "RW/CW 1/29/17");
   // Fetch the number of attached temperature sensors
   numSensors = Number_Temp_Sensors;
   // Present all sensors to controller
@@ -119,6 +121,8 @@ void presentation()
   present(Shop_Temp_ID, S_TEMP, "ShopTemp");                              // Shop Temp Child ID 2
   delay(100);
   present(Attic_Temp_ID, S_TEMP, "AtticTemp");                            // Attic Temp Child ID 3
+  delay(100);
+  present(Lower_Panel_Inlet_Temp_ID, S_TEMP, "LowerInletTemp");           // Solar Panel Lower Inlet Temp
   delay(100);
   present(Tank_Heater_ID, S_BINARY, "TankHeater");                        // Tank Heater Child ID 15
   delay(100);
@@ -163,7 +167,7 @@ void loop()
 
   // Is it Summer or Winter?
   summerWinterMode = digitalRead(summerWinterModePin);           // Read Winter Summer Mode Switch
-  
+
   // Get Thermostat Setting
   thermostatSetting();                        // Go See Where the Thermostat is Set
 
@@ -189,68 +193,78 @@ void loop()
     // Send in the new Solar_Panel_Temp
     send(msg_solar_panel_temp.setSensor(Solar_Panel_Temp_ID).set(panelTemp, 1));
     Serial.println ("");
-  wait(500);
-  }
+    Serial.print("Solar Panel Lower Inlet Temperature= ");
+
+  // Solar Panel Lower Inlet
+    lowerInletTemp =  printTemperature(sensors, Lower_Inlet_Temp_Addr);
+    if (tempGetFail == false)
+    {
+      currentLowerInletTemp = lowerInletTemp;
+    // Send in the new Lower Inlet Temp
+    send(msg_lower_inlet_temp.setSensor(Lower_Panel_Inlet_Temp_ID).set(lowrInletTemp, 1));
+    Serial.println ("");
+    wait(500);
+    }
 
   // Tank
-  Serial.print("Storage Tank Temperature is: ");
-  tankTemp = printTemperature(sensors, Tank_Temp_Addr);
-  if (tempGetFail == false)
-  {
-    currentTankTemp = tankTemp;
-    // Send in the new Tank_Temp
-    send(msg_tank_temp.setSensor(Tank_Temp_ID).set(tankTemp, 1));
-    Serial.println ("");
-  wait(500);
-  }
+    Serial.print("Storage Tank Temperature is: ");
+    tankTemp = printTemperature(sensors, Tank_Temp_Addr);
+    if (tempGetFail == false)
+    {
+      currentTankTemp = tankTemp;
+      // Send in the new Tank_Temp
+      send(msg_tank_temp.setSensor(Tank_Temp_ID).set(tankTemp, 1));
+      Serial.println ("");
+      wait(500);
+    }
 
-  // Shop
-  Serial.print("Shop Temperature is: ");
-  shopTemp = printTemperature(sensors, Shop_Temp_Addr);
-  if (tempGetFail == false)
-  {
-    currentShopTemp = shopTemp;
-    // Send in the new Shop_Temp
-    send(msg_shop_temp.setSensor(Shop_Temp_ID).set(shopTemp, 1));
-    Serial.println ("");
-  wait(500);
-  }
+    // Shop
+    Serial.print("Shop Temperature is: ");
+    shopTemp = printTemperature(sensors, Shop_Temp_Addr);
+    if (tempGetFail == false)
+    {
+      currentShopTemp = shopTemp;
+      // Send in the new Shop_Temp
+      send(msg_shop_temp.setSensor(Shop_Temp_ID).set(shopTemp, 1));
+      Serial.println ("");
+      wait(500);
+    }
 
-  // Attic
-  Serial.print("Attic Temperature is: ");
-  atticTemp = printTemperature(sensors, Attic_Temp_Addr);
-  Serial.print("F: ");
-  Serial.println(tempF);
+    // Attic
+    Serial.print("Attic Temperature is: ");
+    atticTemp = printTemperature(sensors, Attic_Temp_Addr);
+    Serial.print("F: ");
+    Serial.println(tempF);
 
-  if (tempGetFail == false)
-  {
-    currentAtticTemp = atticTemp;
-    // Send GW the new Attic_Temp
-    send(msg_attic_temp.setSensor(Attic_Temp_ID).set(atticTemp, 1));
-    Serial.println ("");
-  wait(500);
-  }
-  else
-  {
-    atticTemp = -127.0;
-  }
+    if (tempGetFail == false)
+    {
+      currentAtticTemp = atticTemp;
+      // Send GW the new Attic_Temp
+      send(msg_attic_temp.setSensor(Attic_Temp_ID).set(atticTemp, 1));
+      Serial.println ("");
+      wait(500);
+    }
+    else
+    {
+      atticTemp = -127.0;
+    }
 
-  readTankPumpFlow();                         // Compute Tank Pump Flow
-  readTankPumpPressure();                     // Go see if the panel pump needs to get turned                    // Get Tank Pump Pressure
-  processTankPump();                          // Pump Water Through the Solar Panel
-  processAtticFan();                          //
-  Serial.print("Attic Fan is ");
-  Serial.println(atticFanStatus);
-  Serial.print("Attic Louvers are ");
-  Serial.println(atticLouverStatus);
-  processHVACPumpFan();                       // Pump Water Through the HVAC Heat Exchanger and Turn on the HVAC Fan
-  processTankHeater();                        // Turn On Tank Heater if Shop Gets To Cold
-  processShopSupHeater();                     // Do We Need to Turn On Extra Heat?
-  writeLCD();                                 // Send results to LCD Dispaly
-  Test_Button ();
-  processAlarm();
+    readTankPumpFlow();                         // Compute Tank Pump Flow
+    readTankPumpPressure();                     // Go see if the panel pump needs to get turned                    // Get Tank Pump Pressure
+    processTankPump();                          // Pump Water Through the Solar Panel
+    processAtticFan();                          //
+    Serial.print("Attic Fan is ");
+    Serial.println(atticFanStatus);
+    Serial.print("Attic Louvers are ");
+    Serial.println(atticLouverStatus);
+    processHVACPumpFan();                       // Pump Water Through the HVAC Heat Exchanger and Turn on the HVAC Fan
+    processTankHeater();                        // Turn On Tank Heater if Shop Gets To Cold
+    processShopSupHeater();                     // Do We Need to Turn On Extra Heat?
+    writeLCD();                                 // Send results to LCD Dispaly
+    Test_Button ();
+    processAlarm();
     wait(30000);
-  // Go Do It All Again
-}
+    // Go Do It All Again
+  }
 
-// **** ( THE END ) ****
+  // **** ( THE END ) ****

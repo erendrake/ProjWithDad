@@ -6,6 +6,7 @@
 #define SYSTEM_DIFF_OFF 0
 float SYSTEM_OVERHEAT = 190.0;
 // Define Sensors and Controllers
+const byte TEMP_BUS_PIN = 22;
 #define TEMP_POLLING_DELAY_SECONDS 3
 #define SOLAR_PANEL_TEMP_NAME "Solar_Panel_Temp"
 #define TANK_TEMP_NAME "Tank_Temp"
@@ -63,8 +64,11 @@ const byte attic_Fan_Pin = 27;                    // * Attic Fan Pin
 const byte summerWinterModePin = 17;              // * Summer/Winter Mode Switch
 // Analog
 const byte set_Temp_Pot_Pin = A4;                 // Analog Pin for Thermostat Pot
-const byte buttonPin = A5;                        // the number of the pushbutton pin
+const byte buttonPin = 28;                        // the number of the pushbutton pin
 const byte tank_Pump_Pressure_Pin = A15;          // Tank Pressure Sensor Pin
+const byte interruptLED = A5;
+
+// Interrupt Test LED
 
 
 // **** Flow Sensor Stuff ****
