@@ -25,7 +25,5 @@ void setupPins()
     // Analog
   pinMode(tank_Pump_Pressure_Pin, INPUT);
   pinMode(set_Temp_Pot_Pin, INPUT);
-  pinMode(interruptLED, OUTPUT);
-  digitalWrite(interruptLED, HIGH);
 }
 // "*" = Supplemental Sensor Board. Pluges Into Extra I/O Pins on Ardino Mega 

@@ -19,14 +19,28 @@
   #define ONE_WIRE_BUS 3 // Pin where dallase sensor is connected 
   #define MAX_ATTACHED_DS18B20 16
   #include "config.h"
+  #include <LCD.h>
+  #include <LiquidCrystal_I2C.h>
 
+// 2 line LCD Stuff
+  #define I2C_ADDR    0x27 // <<- Add your address here.
+  #define Rs_pin  0
+  #define Rw_pin  1
+  #define En_pin  2
+  #define BACKLIGHT_PIN 3
+  #define D4_pin  4
+  #define D5_pin  5
+  #define D6_pin  6
+  #define D7_pin  7
+
+  LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
 
 
 // Solar addons
 //Temperature Thresholds
-  const int systemDiffOn = SYSTEM_DIFF_ON;
-  const int systemDiffOff = SYSTEM_DIFF_OFF;
-  const int systemOverheat = SYSTEM_OVERHEAT;
+  const float systemDiffOn = SYSTEM_DIFF_ON;
+  const float systemDiffOff = SYSTEM_DIFF_OFF;
+  const float systemOverheat = SYSTEM_OVERHEAT;
   
 // Timer
   const int minimumPumpOnSeconds = MINIMUM_PUMP_ON_SECONDS;
@@ -134,7 +148,7 @@ void setup()
   // requestTemperatures() will not block current thread
   sensors.setWaitForConversion(false);
   setupPins(); 
-  setupLCD();
+//  setupLCD();
 }
 
 void setupPins(){
@@ -183,10 +197,6 @@ void presentation() {
 
 // ************* End Of Presentation ********************
 }
-  const int Solar_Panel_Temp_ID        =    0; // Panel Temp Child ID
-  const int Tank_Temp_ID               =    1; // Tank Temp Child ID
-  const int Shop_Temp_ID               =    2; // Shop Temp Child ID
-  const int Attic_Temp_ID              =    3; // Panel Pump Flow Child ID
 
 void loop()     
 { 
@@ -377,22 +387,7 @@ float logTempSensor(DallasTemperature sensors, const DeviceAddress address, cons
 }
 
 
-//OUTPUT STUFFS
-#include <LCD.h>
-#include <LiquidCrystal_I2C.h>
 
-// 2 line LCD Stuff
-#define I2C_ADDR    0x27 // <<- Add your address here.
-#define Rs_pin  0
-#define Rw_pin  1
-#define En_pin  2
-#define BACKLIGHT_PIN 3
-#define D4_pin  4
-#define D5_pin  5
-#define D6_pin  6
-#define D7_pin  7
-
-LiquidCrystal_I2C lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
 
 void setupLCD(){
 // LCD Setup

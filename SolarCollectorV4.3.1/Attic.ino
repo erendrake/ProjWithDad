@@ -1,12 +1,13 @@
 /* Solar Project
- *  Attic Fan and Louver 
+Attic Fan and Louver 
 #define attic_Louver_Open LOW
 #define attic_Louver_Closed HIGH
 #define attic_Fan_On LOW
 #define attic_Fan_Off HIGH
 */
 
-void processAtticFan(){
+void processAtticFan()
+{
   Serial.println("We made it to the processAtticFan");
   float systemDifference = atticTemp - shopTemp;
   if (systemDifference > systemDiffOn && atticFanStatus == false && atticLouverStatus == false){

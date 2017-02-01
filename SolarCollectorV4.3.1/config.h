@@ -46,6 +46,8 @@ unsigned long loopSleepTimerMs = 10000;
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
 unsigned long pumpOnTime = 0;               // Used for Minute Min Pump On Time
+unsigned long hvacFanPumpOnTime = 0;
+unsigned long currentHVACFanPumpOnTime = 0;
 
 // **** Pin Assingments for Arduino Mega ****
 // Radio Pin Assingments for Arduino Mega Defined in Main Sketch
@@ -57,7 +59,6 @@ unsigned long pumpOnTime = 0;               // Used for Minute Min Pump On Time
 // CSN/CS PIN = D53         Yellow
 // VCC      = SupHeader +5V Red                   // * Extra Header Mostly for Power.
 // GND      = SupHeader GND Black
-
 
 // Digital
 const byte motion_Sensor_Pin = 8;                 // Motion Sensor Pin
@@ -71,12 +72,13 @@ const byte HVAC_Fan_Pump_Pin = 23;                // * HVAC Blower Fan and Pump 
 const byte attic_Louver_Pin = 25;                 // * Attic Louver Pin
 const byte tank_Heater_Pin = 26;                  // * Storage Tank Heater Pin
 const byte attic_Fan_Pin = 27;                    // * Attic Fan Pin
+const byte cupolaFanPin = 28;                     // Cupola Fan Pin
 
 // Analog
 const byte set_Temp_Pot_Pin = A4;                 // Analog Pin for Thermostat Pot
 const byte buttonPin = 28;                        // the number of the pushbutton pin
 const byte tank_Pump_Pressure_Pin = A15;          // Tank Pressure Sensor Pin
-const byte interruptLED = A5;
+
 
 // **** Flow Sensor Stuff ****
 volatile int flowCounter;                         //measuring the rising edges of the signal
@@ -94,8 +96,14 @@ const int fanDelayMs = 10000;
 #define attic_Fan_Off HIGH
 #define attic_Gable_Louver_Open LOW
 #define attic_Gable_Louver_Closed HIGH
-#define cupola_Fan_On LOW
-#define cupola_Fan_Off HIGH
+#define cupolaFanOn LOW
+#define cupolaFanOff HIGH
+#define hvacFanPumpOn LOW
+#define hvacFanPumpOff HIGH
+#define hvacPumpOn LOW
+#define hvacPumpOff HIGH
+#define hvacFanOn LOW
+#define hvacFanOff HIGH
 
 // the following variables are long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
@@ -161,6 +169,7 @@ bool motonSensorStatus = false;
 bool tempGetFail = false;
 bool heating = false;
 bool supHeating = false;
+bool cupolaFanStatus = false;
 
 // **** Hex Addresses of Dallas Temp Sensors ****
 DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};

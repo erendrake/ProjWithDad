@@ -1,6 +1,6 @@
 /* Solar Project
 
-  "SolarHeaterControllerV4.3.0", "RW/CW 1/29/17"
+  "SolarHeaterControllerV4.3.1", "RW/CW 1/31/17"
    Example sketch showing how to send in DS1820B OneWire temperature readings back to the controller
    http://www.mysensors.org/build/temp
 */
@@ -111,7 +111,7 @@ void setup()
 // **** Start of Presentation ****
 void presentation()
 {
-  sendSketchInfo("SolarHeaterControllerV4.3.0", "RW/CW 1/29/17");
+  sendSketchInfo("SolarHeaterControllerV4.3.1", "RW/CW 1/31/17");
   // Fetch the number of attached temperature sensors
   numSensors = Number_Temp_Sensors;
   // Present all sensors to controller
@@ -204,9 +204,9 @@ void loop()
     {
       currentLowerInletTemp = lowerInletTemp;
     // Send in the new Lower Inlet Temp
-    send(msg_lower_inlet_temp.setSensor(Lower_Panel_Inlet_Temp_ID).set(lowerInletTemp, 1));
-    Serial.println ("");
-    wait(500);
+      send(msg_lower_inlet_temp.setSensor(Lower_Panel_Inlet_Temp_ID).set(lowerInletTemp, 1));
+      Serial.println ("");
+      wait(500);
     }
 
   // Tank
@@ -260,8 +260,11 @@ void loop()
     Serial.println(atticFanStatus);
     Serial.print("Attic Louvers are ");
     Serial.println(atticLouverStatus);
+    thermostatSetting();                        // Go Get the Thermostat Setting
     processHVACPumpFan();                       // Pump Water Through the HVAC Heat Exchanger and Turn on the HVAC Fan
     processTankHeater();                        // Turn On Tank Heater if Shop Gets To Cold
+//    processGableLouver();
+//    processCopulaFan();
     processShopSupHeater();                     // Do We Need to Turn On Extra Heat?
     writeLCD();                                 // Send results to LCD Dispaly
     Test_Button ();
