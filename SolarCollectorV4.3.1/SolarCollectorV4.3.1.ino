@@ -20,8 +20,9 @@
 #define ONE_WIRE_BUS 24                         // * Pin Where Dallase Sensors are Connected. Has 4.7K ohm Pullup.
 #define MAX_ATTACHED_DS18B20 16
 #include <LiquidCrystal.h>
-#include <avr/interrupt.h>
+//#include <avr/interrupt.h>
 #include "config.h"
+// ControllerConfig getControllerConfig();
 
 // **** Start OneWire and Dallas Temp ****
 OneWire oneWire(ONE_WIRE_BUS);                // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
@@ -111,44 +112,44 @@ void setup()
 // **** Start of Presentation ****
 void presentation()
 {
-  sendSketchInfo("SolarHeaterControllerV4.3.1", "RW/CW 1/31/17");
+  sendSketchInfo("SolarHeaterControllerV4.3.1", "RW/CW 1/31/17", ack);
   // Fetch the number of attached temperature sensors
   numSensors = Number_Temp_Sensors;
   // Present all sensors to controller
   // Array for storing temps
-  present(Solar_Panel_Temp_ID, S_TEMP, "PanelTemp");                      // Panel Temp Child ID 0
+  present(Solar_Panel_Temp_ID, S_TEMP, "PanelTemp", ack);                      // Panel Temp Child ID 0
   delay(100);
-  present(Tank_Temp_ID, S_TEMP, "TankTemp");                              // Tank Temp Child ID 1
+  present(Tank_Temp_ID, S_TEMP, "TankTemp", ack);                              // Tank Temp Child ID 1
   delay(100);
-  present(Shop_Temp_ID, S_TEMP, "ShopTemp");                              // Shop Temp Child ID 2
+  present(Shop_Temp_ID, S_TEMP, "ShopTemp", ack);                              // Shop Temp Child ID 2
   delay(100);
-  present(Attic_Temp_ID, S_TEMP, "AtticTemp");                            // Attic Temp Child ID 3
+  present(Attic_Temp_ID, S_TEMP, "AtticTemp", ack);                            // Attic Temp Child ID 3
   delay(100);
-  present(Lower_Panel_Inlet_Temp_ID, S_TEMP, "LowerInletTemp");           // Solar Panel Lower Inlet Temp
+  present(Lower_Panel_Inlet_Temp_ID, S_TEMP, "LowerInletTemp", ack);           // Solar Panel Lower Inlet Temp
   delay(100);
-  present(Tank_Heater_ID, S_BINARY, "TankHeater");                        // Tank Heater Child ID 15
+  present(Tank_Heater_ID, S_BINARY, "TankHeater", ack);                        // Tank Heater Child ID 15
   delay(100);
-  present(Tank_Pump_ID, S_BINARY, "TankPump");                            // Tank Pump Child ID 10
+  present(Tank_Pump_ID, S_BINARY, "TankPump", ack);                            // Tank Pump Child ID 10
   delay(100);
-  present(Tank_Pump_Pressure_ID, S_CUSTOM, "PumpPress");                  // Panel Pump Pressure Child ID 4
+  present(Tank_Pump_Pressure_ID, S_CUSTOM, "PumpPress", ack);                  // Panel Pump Pressure Child ID 4
   delay(100);
-  present(Tank_Pump_Flow_ID, S_WATER, "PumpFlow");                        // Panel Pump Flow Child ID 6
+  present(Tank_Pump_Flow_ID, S_WATER, "PumpFlow", ack);                        // Panel Pump Flow Child ID 6
   delay(100);
-  present(Attic_Fan_ID, S_BINARY, "AtticFan");                            // Attic Fan Child ID 13
+  present(Attic_Fan_ID, S_BINARY, "AtticFan", ack);                            // Attic Fan Child ID 13
   delay(100);
-  present(Attic_Louver_ID, S_BINARY, "AtticLouver");                      // Attic Louver Child ID 14
+  present(Attic_Louver_ID, S_BINARY, "AtticLouver", ack);                      // Attic Louver Child ID 14
   delay(100);
-  present(General_Alarm_ID, S_BINARY, "GeneralAlarm");                    // General Alarm Over Heat and Test Button
+  present(General_Alarm_ID, S_BINARY, "GeneralAlarm", ack);                    // General Alarm Over Heat and Test Button
   delay(100);
-  present(Test_Button_ID, S_BINARY, "TestButton");                        // Test Button Sets off the General Alarm
+  present(Test_Button_ID, S_BINARY, "TestButton", ack);                        // Test Button Sets off the General Alarm
   delay(100);
-  present(HVAC_Set_Point_ID, S_HEATER, "TempSetPoint");                   // Thermostat Setting
+  present(HVAC_Set_Point_ID, S_HEATER, "TempSetPoint",ack);                   // Thermostat Setting
   delay(100);
-  present(Motion_Sensor_ID, S_MOTION, "Motion Sensor");                   // Motion Sensor
+  present(Motion_Sensor_ID, S_MOTION, "Motion Sensor", ack);                   // Motion Sensor
   delay(100);
-  present(Shop_Sup_Heater_ID, S_HVAC, "Supplemental Heater");  // Shop Supplemental Electric Heater
+  present(Shop_Sup_Heater_ID, S_HVAC, "Supplemental Heater", ack);  // Shop Supplemental Electric Heater
   delay(100);
-  present(Summer_Winter_Mode_ID, S_BINARY, "Summer/Winter Switch");       // Summer/Winter Mode Switch
+  present(Summer_Winter_Mode_ID, S_BINARY, "Summer/Winter Switch", ack);       // Summer/Winter Mode Switch
 }
 
 // **** Routine to Compute RPM of Flow Sensor ****
@@ -161,6 +162,7 @@ void rpm () //This is the function that the interupt calls
 // **** Start of void loop ****
 void loop()
 {
+  
   Serial.println();
   Serial.print("Number of Dallas Devices found on bus = ");
   Serial.println(sensors.getDeviceCount());
@@ -168,7 +170,7 @@ void loop()
   Serial.println();
 
   // Is it Summer or Winter?
-  summerWinterMode = digitalRead(summerWinterModePin);           // Read Winter Summer Mode Switch
+  processSummerWinterMode();           // Read Winter Summer Mode Switch
 
   // Get Thermostat Setting
   thermostatSetting();                        // Go See Where the Thermostat is Set
@@ -251,7 +253,8 @@ void loop()
     {
       atticTemp = -127.0;
     }
-
+    
+    processCopulaFan();                         // Nothing there yet
     readTankPumpFlow();                         // Compute Tank Pump Flow
     readTankPumpPressure();                     // Go see if the panel pump needs to get turned                    // Get Tank Pump Pressure
     processTankPump();                          // Pump Water Through the Solar Panel
@@ -260,7 +263,6 @@ void loop()
     Serial.println(atticFanStatus);
     Serial.print("Attic Louvers are ");
     Serial.println(atticLouverStatus);
-    thermostatSetting();                        // Go Get the Thermostat Setting
     processHVACPumpFan();                       // Pump Water Through the HVAC Heat Exchanger and Turn on the HVAC Fan
     processTankHeater();                        // Turn On Tank Heater if Shop Gets To Cold
 //    processGableLouver();

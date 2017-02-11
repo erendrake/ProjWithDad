@@ -5,6 +5,7 @@
 
 void writeLCD()
 {
+   Serial.println("We made it to writeLCD.");
   lcd.clear();
   lcd.setCursor (0, 0); // go to start of 1st line
   lcd.print("P");

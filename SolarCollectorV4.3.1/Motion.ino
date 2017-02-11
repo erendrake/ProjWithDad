@@ -8,6 +8,8 @@
 
 void motionSensor()
 {
+   Serial.println("We made it to Motion Sensor.");
+   Serial.println("But no one is home yet!");
 /*  // Read digital motion value
   bool tripped = digitalRead(motion_Sensor_Pin) == HIGH;
 

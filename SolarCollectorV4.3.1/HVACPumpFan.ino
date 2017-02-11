@@ -4,19 +4,20 @@
 
 void processHVACPumpFan()
 {
+   Serial.println("We made it to processHVACPumpFan.");
   // See if We Need to and Can Turn on the HVAC Pump and Fan
   if (((currentTankTemp + 3.0) >= hvacSetPoint) && (shopTemp <= (hvacSetPoint - 2.0) && heating == false))
   {
     digitalWrite(HVAC_Fan_Pump_Pin, hvacFanPumpOn);           //  Turn on HVAC Pump and Fan if shopTemp <= setPoint - 2
     hvacFanPumpOnTime = millis();                           // Start the 2 Minute Timer
-    Serial.println("Heater On");
+    Serial.println("HVAC Pump and FAN are ON!");
     heating = true;
   }
   currentHVACFanPumpOnTime = millis() - hvacFanPumpOnTime;  // Check How Long the Fan and Pump Have Been Running
   if (shopTemp >= (hvacSetPoint + 2.0) && (currentHVACFanPumpOnTime >= minPumpOnTime) && heating == true);
   {
     digitalWrite(HVAC_Fan_Pump_Pin, hvacFanPumpOff);          // Turn HVAC Pump and Fan if off if shopTemp >= setPoint + 2
-    Serial.println("Heater Off");
+    Serial.println("HVAC Pump and FAN are Off");
     heating = false;
   }
 }

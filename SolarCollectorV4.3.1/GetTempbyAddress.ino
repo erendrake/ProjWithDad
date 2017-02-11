@@ -3,6 +3,7 @@
 
 float printTemperature(DallasTemperature sensors, DeviceAddress deviceAddress)
 {
+//   Serial.println("We made it to Get Temp by Address.");
     tempF = sensors.getTempF(deviceAddress);
     if (tempF <= -50.00)
     {

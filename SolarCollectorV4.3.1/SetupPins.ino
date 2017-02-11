@@ -3,6 +3,7 @@
 
 void setupPins()
 {
+   Serial.println("We made it to setupPins.");
   // Digital
   pinMode(tankPumpPin, OUTPUT);
   digitalWrite(tankPumpPin, HIGH);
@@ -20,7 +21,7 @@ void setupPins()
   digitalWrite(buttonPin, HIGH);
   pinMode(motion_Sensor_Pin, INPUT);
   pinMode(buttonPin, INPUT_PULLUP);
-  pinMode(flowSensorPin, INPUT_PULLUP);              //initializes digital pin 21 ON Mega as an input
+  pinMode(flowSensorPin, INPUT_PULLUP);              // Initializes Digital Pin 21 ON Mega as an Input With Pullup
   pinMode(summerWinterModePin, INPUT_PULLUP);
     // Analog
   pinMode(tank_Pump_Pressure_Pin, INPUT);

@@ -3,6 +3,8 @@
 
 void  processTankHeater()
 {
+   Serial.println("We made it to processTankHeater.");
+
   if (currentTankTemp <= tankTempUnderTemp)            // Turn On Tank Heater If the W
   {
     digitalWrite(tank_Heater_Pin, LOW);

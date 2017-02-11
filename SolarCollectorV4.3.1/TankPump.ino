@@ -3,6 +3,7 @@
 
 void processTankPump()
 {
+   Serial.println("We made it to processTankPump.");
   // minTankPumpOnSeconds = 120
   // const int systemDiffOn = SYSTEM_DIFF_ON;             // 1°
   // const int systemDiffOff = SYSTEM_DIFF_OFF;           // 0°
@@ -42,6 +43,7 @@ void processTankPump()
 // Read Pump Pressure Sensor, Check to see if it's changed
 void readTankPumpPressure()
 {
+   Serial.println("We made it to readTankPumpPressure.");
   // if after flow startup timer has expired and the flow is still to low add something Here!
   float rawSensorValue = analogRead(tank_Pump_Pressure_Pin);    // Read Pin A15 Value range 0-1023
   float voltage = rawSensorValue * (5.0 / 1023.0);
@@ -66,6 +68,7 @@ void readTankPumpPressure()
 // **** Tank Pump Flow ****
 void readTankPumpFlow ()
 {
+  Serial.println("We made it to readTankPumpFlow.");
   Serial.print("Flow Counter=");
   Serial.println(flowCounter);
   Serial.println ("");

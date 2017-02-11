@@ -3,6 +3,7 @@
 
 void thermostatSetting()
 {
+   Serial.println("We made it to thermostatSetting.");
   potValue = analogRead(set_Temp_Pot_Pin);
   Serial.print("Pot Value=");
   Serial.println(potValue);                // Can be Anything From 0-1023

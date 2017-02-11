@@ -4,7 +4,8 @@
 
 void processShopSupHeater()
 {
-  char mode;
+   Serial.println("We made it to Supplemental Heater Sketch.");
+/*  char mode;
 if (summerWinterMode = 0)
   {
     char mode[] = "Summer";
@@ -13,9 +14,9 @@ if (summerWinterMode = 0)
   {
     char mode[] = "Winter";
   }
-   
-  Serial.println("Summer/Winter Mode Switch Set to " + mode);
-  if (summerWinterMode = 0);                   // 0 = Summer, 1 = Winter
+*/   
+  Serial.println("Summer/Winter Mode Switch Set to " + summerWinterMode);
+  if (summerWinterMode == Summer);                   // 0 = Summer, 1 = Winter
 
   {
     if (currentShopTemp <= 35.0)                     // Burr Really Cold for Summer

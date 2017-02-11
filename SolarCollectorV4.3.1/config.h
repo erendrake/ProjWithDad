@@ -1,14 +1,6 @@
 // Config.h for Solar Project
 //
-
-//Temperature Thresholds
-// #define SYSTEM_DIFF_ON 1.0  
-// #define SYSTEM_DIFF_OFF 0.0
-// #define SYSTEM_OVERHEAT 160.0
-// float SYSTEM_DIFF_ON = 1.0;                           // Solar Panel Temp Must be at Least 1° Above to Turn On the Pump
-// float SYSTEM_DIFF_OFF = 0.0;                          // and = Or Below to Turn It Off
-// float SYSTEM_OVERHEAT = 190.0;                        // If Tank Temp Reaches This Temp Shut the Pump Off
-
+//   Serial.println("We made it to Config.h.");
 // Define Sensors and Controllers
 // #define TEMP_POLLING_DELAY_SECONDS 3                  // Temp Polling Interval (Currently Not Used)
 #define SOLAR_PANEL_TEMP_NAME "Solar_Panel_Temp"      //
@@ -25,6 +17,32 @@
 int buttonState;                                      // the current reading from the input pin
 int lastButtonState = LOW;                            // the previous reading from the input pin
 
+
+#define attic_Louver_Open LOW
+#define attic_Louver_Closed HIGH
+#define attic_Fan_On LOW
+#define attic_Fan_Off HIGH
+#define attic_Gable_Louver_Open LOW
+#define attic_Gable_Louver_Closed HIGH
+#define cupolaFanOn LOW
+#define cupolaFanOff HIGH
+#define hvacFanPumpOn LOW
+#define hvacFanPumpOff HIGH
+#define hvacPumpOn LOW
+#define hvacPumpOff HIGH
+#define hvacFanOn LOW
+#define hvacFanOff HIGH
+#define Summer HIGH
+#define Winter LOW
+#define switchState Winter
+#define lastSwitchState Winter
+#define summerWinterMode Winter                        // Summer = 0, Winter = 1 Default to Winter
+#define lcdA0 A0
+#define lcdA1 A1
+#define lcdA2 A2
+#define tempPotPin A4
+#define tankPumpPressurePin A11
+
 //Temperature Thresholds
 #define systemDiffOn 1.0                              // 1°
 #define systemDiffOff 0.0                             // 0°
@@ -33,8 +51,11 @@ float systemDifference = - 20.0;
 
 // Other Nodes Parent and Child ID's
 // Supplamental Shop Electic Heater Controller MySensors Info
-const byte shopSupHeaterParentID = 6;                 // Parent Id of Heater Node
+const byte shopSupHeaterParentID = 7;                 // Parent Id of Heater Node
 const byte shopSupHeaterChildID = 1;                  // This is the Heater (Child) ID
+const byte outSideTempHumParentID = 6;
+const byte outSideTempChildID = 1;
+const byte outSideHumChildID = 0;
 
 // **** Timers ****
 unsigned long minPumpOnTime = 120000;
@@ -77,7 +98,7 @@ const byte cupolaFanPin = 28;                     // Cupola Fan Pin
 // Analog
 const byte set_Temp_Pot_Pin = A4;                 // Analog Pin for Thermostat Pot
 const byte buttonPin = 28;                        // the number of the pushbutton pin
-const byte tank_Pump_Pressure_Pin = A15;          // Tank Pressure Sensor Pin
+const byte tank_Pump_Pressure_Pin = A11;          // Tank Pressure Sensor Pin
 
 
 // **** Flow Sensor Stuff ****
@@ -86,24 +107,9 @@ float calc_lpm;                                   // Liters Per Minute
 float calc_gpm;
 
 // Suplamental Heater Stuff
-byte summerWinterMode = 1;                        // Summer = 0, Winter = 1 Default to Winter
 
-// Attic Celing Fan and Louver and Gable Louver and Cupla Fan
-const int fanDelayMs = 10000;
-#define attic_Louver_Open LOW
-#define attic_Louver_Closed HIGH
-#define attic_Fan_On LOW
-#define attic_Fan_Off HIGH
-#define attic_Gable_Louver_Open LOW
-#define attic_Gable_Louver_Closed HIGH
-#define cupolaFanOn LOW
-#define cupolaFanOff HIGH
-#define hvacFanPumpOn LOW
-#define hvacFanPumpOff HIGH
-#define hvacPumpOn LOW
-#define hvacPumpOff HIGH
-#define hvacFanOn LOW
-#define hvacFanOff HIGH
+
+
 
 // the following variables are long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
@@ -170,7 +176,7 @@ bool tempGetFail = false;
 bool heating = false;
 bool supHeating = false;
 bool cupolaFanStatus = false;
-
+bool ack = true;
 // **** Hex Addresses of Dallas Temp Sensors ****
 DeviceAddress Solar_Panel_Temp_Addr = {0x28, 0x30, 0x12, 0x29, 0x07, 0x00, 0x00, 0x95};
 DeviceAddress Tank_Temp_Addr =        {0x28, 0x45, 0xA3, 0x1C, 0x07, 0x00, 0x00, 0xAD};

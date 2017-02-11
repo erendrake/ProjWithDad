@@ -3,7 +3,8 @@
 
 void processAlarm ()
 {
-  String errorString = String("");
+   Serial.println("We made it to processAlarm.");
+   String errorString = String("");
   Serial.println("Error State= " + errorState);
   if (errorState = 0)
   {
