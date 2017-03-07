@@ -49,6 +49,23 @@ void loop()
 	if(currentMillis >= nextStatusUpdateMS){
 		nextStatusUpdateMS = currentMillis + statusUpdateIntervalMS;
 		sendStatusUpdate(TARGET_DESTINATION);
+  if (Serial.available()) {
+    byte inChar = Serial.read();
+    uint8_t node = getNodeId();
+
+    // Manual Test Mode
+    if (inChar == 'T' || inChar == 't') {
+      LOG(F("T received - starting test...\n"));
+      MyMessage msg = mPong;
+      msg.sender = (node == YING ? YANG : YING);
+      sendPingOrPongResponse( msg );
+    } else if (inChar == '0' or inChar == '1') {
+      byte nodeID = 200 + (inChar - '0');
+      setNodeId(nodeID);
+    } else {
+      LOG("Invalid input\n");
+    }
+	
 	}
 }
 
