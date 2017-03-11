@@ -20,7 +20,7 @@
 
 // Define two generic nodes with a single child
 #define MY_NODE_ID 6
-#define ME_HEATER 1
+#define MY_HEATER 1
 
 #define TARGET_DESTINATION 123456
 
