@@ -1,5 +1,3 @@
-
-
 void processAtticFan()
 {
   Serial.println("Process Attic Fan");
@@ -18,16 +16,17 @@ void processAtticFan()
   Serial.print("CurrentAtticTemp - CurrentTankTemp= ");
   Serial.println(atticTempDiff, 1);
 
-  if ((currentAtticTemp > currentTankTemp) && (atticFanStatus == true))
+  if (((currentAtticTemp -2.0) > currentTankTemp) && (atticFanStatus == true)) // Turn off when attic is only 2° warmer than the tank 
   {
     Serial.println("Attic FanLouver is All Ready On");
+    send(msg_attic_fan.setSensor(Attic_Fan_ID).set(1));                   //  Send GW New Status
     return;
   }
 
-  if ((currentAtticTemp - 5.0) > currentTankTemp)
+  if ((currentAtticTemp - 8.0) > currentTankTemp)   // Attic must be 8° warmer than the Tank 
   {
-    Serial.print("currentAtticTemp + 5.0= ");
-    Serial.println(currentAtticTemp + 5.0);
+    Serial.print("currentAtticTemp - 8.0= ");
+    Serial.println(currentAtticTemp - 8.0);
     Serial.println("We should be turning everything on upstairs");
     Serial.print("Attic Fan Status is ");
     Serial.println(atticFanStatus);
@@ -39,7 +38,6 @@ void processAtticFan()
   {
     Serial.println("Attic Temp Lower or Equal to Tank Temp");
     atticFanLouverOff();
-    //    send(msg_attic_temp.setSensor(Attic_Temp_ID).set(atticTemp, 1));
   }
 }
 
@@ -51,36 +49,32 @@ void processAtticFan()
 // **** Turn On the Stuff Upstairs ****
 void atticFanLouverOn()
 {
-  Serial.println("Turn on Pin 13 LED");
-  digitalWrite(13, HIGH);
   digitalWrite(atticLouverPin, LOW);                    //  Open Attic Louvers
   Serial.println("Attic Louvers are Open");
   atticLouverStatus = true;
   //wait for Louver to open
   //  wait(atticFanwaitMs);
-  //  send(msg_attic_louver.setSensor(Attic_Louver_ID).set(1));             //  Send GW New Status
-  delay(500);
+  send(msg_attic_louver.setSensor(Attic_Louver_ID).set(1));             //  Send GW New Status
+  wait(500);
   digitalWrite(atticFanPin, LOW);                            // Turn On Attic Fan
   Serial.println("Attic Fan is On");
   atticFanStatus = true;
-  //  send(msg_attic_fan.setSensor(Attic_Fan_ID).set(1));                   //  Send GW New Status
+  send(msg_attic_fan.setSensor(Attic_Fan_ID).set(1));                   //  Send GW New Status
 }
 
 // **** Turn Off the Stuff Upstairs ****
 void atticFanLouverOff()
 {
-  Serial.println("Turn off Pin 13 LED");
-  digitalWrite(13, LOW);
   digitalWrite(atticFanPin, HIGH);                           // Turn Off Fan
   Serial.println("Attic Fan is Off");
   atticFanStatus = false;
-  //  send(msg_attic_fan.setSensor(Attic_Fan_ID).set(0));                   //  Send GW New Status
+  send(msg_attic_fan.setSensor(Attic_Fan_ID).set(0));                   //  Send GW New Status
   //wait for fan to stop
   //  wait(atticFanDelayMs);
   digitalWrite(atticLouverPin, HIGH);                  //  Close Attic Louvers
   Serial.println("Attic Louvers are Closed");
   atticLouverStatus = false;
-  //  send(msg_attic_louver.setSensor(Attic_Louver_ID).set(0));             //  Send GW New Status
+  send(msg_attic_louver.setSensor(Attic_Louver_ID).set(0));             //  Send GW New Status
 }
 /*
   #define systemDiffOn 5.0                              // 5°
